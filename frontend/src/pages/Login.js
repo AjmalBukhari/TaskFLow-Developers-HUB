@@ -23,6 +23,7 @@ function Login() {
   };
 
   return (
+    <>
     <form onSubmit={handleSubmit}>
       <h2>Login</h2>
 
@@ -40,6 +41,8 @@ function Login() {
 
       <button type="submit">Login</button>
     </form>
+    <a href="/register">Don't have an account? Register here</a>
+    </>
   );
 }
 

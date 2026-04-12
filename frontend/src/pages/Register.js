@@ -22,6 +22,7 @@ function Register() {
   };
 
   return (
+    <>
     <form onSubmit={handleSubmit}>
       <h2>Register</h2>
 
@@ -31,6 +32,8 @@ function Register() {
 
       <button type="submit">Register</button>
     </form>
+    <a href="/">Already have an account? Login here</a>
+    </>
   );
 }
 
