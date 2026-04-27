@@ -2,6 +2,8 @@ const express = require('express');
 const router = express.Router();
 
 const User = require('../models/User');
+const Task = require('../models/Task');
+
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 
@@ -50,80 +52,95 @@ router.post('/register', async (req, res) => {
 
 // ================= LOGIN =================
 router.post('/login', async (req, res) => {
-    try {
-        const { email, password } = req.body;
+  try {
+    const { email, password } = req.body;
 
-        const user = await User.findOne({ email });
-        if (!user) {
-            return res.status(400).json({ message: 'Invalid credentials' });
-        }
-
-        const isMatch = await bcrypt.compare(password, user.password);
-        if (!isMatch) {
-            return res.status(400).json({ message: 'Invalid credentials' });
-        }
-
-        const token = jwt.sign(
-            { id: user._id },
-            process.env.JWT_SECRET,
-            { expiresIn: '7d' }
-        );
-
-        res.json({ token });
-
-    } catch (err) {
-        res.status(500).json({
-            message: 'Server error',
-            error: err.message
-        });
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(400).json({ message: 'Invalid credentials' });
     }
+
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+      return res.status(400).json({ message: 'Invalid credentials' });
+    }
+
+    const token = jwt.sign(
+      { id: user._id },
+      process.env.JWT_SECRET,
+      { expiresIn: '7d' }
+    );
+
+    res.json({ token });
+
+  } catch (err) {
+    res.status(500).json({
+      message: 'Server error',
+      error: err.message
+    });
+  }
 });
 
 
 
 router.get('/me', auth, async (req, res) => {
-    try {
-        const user = await User.findById(req.user.id).select('-password');
-        res.json(user);
-    } catch {
-        res.status(500).json({ message: 'Server error' });
-    }
+  try {
+    const user = await User.findById(req.user.id).select('-password');
+    res.json(user);
+  } catch {
+    res.status(500).json({ message: 'Server error' });
+  }
 });
 
 
 router.put('/me', auth, async (req, res) => {
-    try {
-        const { fullname, password } = req.body;
+  try {
+    const { fullname, password } = req.body;
 
-        const user = await User.findById(req.user.id);
+    const user = await User.findById(req.user.id);
 
-        if (fullname) user.fullname = fullname;
-        if (password) { user.password = password; }
+    if (fullname) user.fullname = fullname;
+    if (password) { user.password = password; }
 
-        await user.save();
+    await user.save();
 
-        res.json({ message: 'Profile updated' });
+    res.json({ message: 'Profile updated' });
 
-    } catch {
-        res.status(500).json({ message: 'Server error' });
-    }
+  } catch {
+    res.status(500).json({ message: 'Server error' });
+  }
 });
 
-// DELETE ACCOUNT
+// ================= DELETE ACCOUNT =================
 router.delete('/me', auth, async (req, res) => {
   try {
     const userId = req.user.id;
 
-    // delete all tasks of user
+    console.log('Deleting user:', userId);
+
+    // delete all tasks
     await Task.deleteMany({ user: userId });
 
     // delete user
-    await User.findByIdAndDelete(userId);
+    const user = await User.findByIdAndDelete(userId);
 
-    res.json({ message: 'Account deleted' });
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
 
-  } catch {
-    res.status(500).json({ message: 'Server error' });
+    if (!req.user?.id) {
+      return res.status(401).json({ message: 'Unauthorized' });
+    }
+
+    res.json({ message: 'Account deleted successfully' });
+
+  } catch (err) {
+    console.error('DELETE ERROR:', err.stack || err);
+
+    res.status(500).json({
+      message: 'Server error',
+      error: err.message
+    });
   }
 });
 
