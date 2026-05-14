@@ -6,11 +6,19 @@ import {
   restoreTask,
   permanentDeleteTask
 } from '../../services/api';
+import ConfirmModal from '../ui/ConfirmModal';
 
 export default function BinTask({ showToast }) {
 
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [confirmModal, setConfirmModal] = useState({
+    isOpen: false,
+    type: "default",
+    title: "",
+    message: "",
+    onConfirm: () => {}
+  });
 
   // ================= FETCH BIN TASKS =================
   const fetchTasks = useCallback(async () => {
@@ -31,28 +39,40 @@ export default function BinTask({ showToast }) {
 
   // ================= RESTORE =================
   const handleRestore = async (id) => {
-    if (!window.confirm('Restore this task?')) return;
-
-    try {
-      await restoreTask(id);
-      showToast('Task restored');
-      fetchTasks();
-    } catch {
-      showToast('Failed to restore', 'error');
-    }
+    setConfirmModal({
+      isOpen: true,
+      type: "default",
+      title: "Restore Task",
+      message: "Are you sure you want to restore this task? It will be moved back to your active tasks.",
+      onConfirm: async () => {
+        try {
+          await restoreTask(id);
+          showToast('Task restored');
+          fetchTasks();
+        } catch {
+          showToast('Failed to restore', 'error');
+        }
+      }
+    });
   };
 
   // ================= PERMANENT DELETE =================
   const handleDelete = async (id) => {
-    if (!window.confirm('Permanently delete this task?')) return;
-
-    try {
-      await permanentDeleteTask(id);
-      showToast('Task permanently deleted', 'error');
-      fetchTasks();
-    } catch {
-      showToast('Delete failed', 'error');
-    }
+    setConfirmModal({
+      isOpen: true,
+      type: "danger",
+      title: "Permanently Delete",
+      message: "This action cannot be undone. The task will be permanently deleted.",
+      onConfirm: async () => {
+        try {
+          await permanentDeleteTask(id);
+          showToast('Task permanently deleted', 'error');
+          fetchTasks();
+        } catch {
+          showToast('Delete failed', 'error');
+        }
+      }
+    });
   };
 
   return (
@@ -126,6 +146,16 @@ export default function BinTask({ showToast }) {
         )}
 
       </div>
+
+      {/* CONFIRM MODAL */}
+      <ConfirmModal
+        isOpen={confirmModal.isOpen}
+        onClose={() => setConfirmModal({ ...confirmModal, isOpen: false })}
+        onConfirm={confirmModal.onConfirm}
+        title={confirmModal.title}
+        message={confirmModal.message}
+        type={confirmModal.type}
+      />
 
     </motion.div>
   );

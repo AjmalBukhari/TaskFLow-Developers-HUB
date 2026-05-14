@@ -1,12 +1,12 @@
 import { useCallback, useEffect, useState } from "react";
 import { motion } from "framer-motion";
 
-import { getAllTasks } from "../../services/api";
+import { getAllTasks, getAnalyticsOverview } from "../../services/api";
 import ProgressBar from "../ProgressBar";
 
 export default function Dashboard({ showToast, onChange }) {
   const [tasks, setTasks] = useState([]);
-
+  const [analytics, setAnalytics] = useState(null);
 
   // ================= FETCH =================
   const fetchTasks = useCallback(async () => {
@@ -15,13 +15,22 @@ export default function Dashboard({ showToast, onChange }) {
       setTasks(data);
     } catch {
       showToast("Failed to load tasks", "error");
-    } finally {
+    }
+  }, [showToast]);
+
+  const fetchAnalytics = useCallback(async () => {
+    try {
+      const { data } = await getAnalyticsOverview();
+      setAnalytics(data);
+    } catch {
+      showToast("Failed to load analytics", "error");
     }
   }, [showToast]);
 
   useEffect(() => {
     fetchTasks();
-  }, [fetchTasks]);
+    fetchAnalytics();
+  }, [fetchTasks, fetchAnalytics]);
 
   // ================= STATS =================
   const total = tasks.length;
@@ -43,10 +52,14 @@ export default function Dashboard({ showToast, onChange }) {
     >
       <ProgressBar tasks={tasks} />
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card title="Total Tasks" value={total} />
-        <Card title="Completed" value={completed} />
-        <Card title="Pending" value={pending} />
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <Card title="Total Tasks" value={analytics?.totalTasks ?? total} />
+        <Card title="Completed" value={analytics?.completedTasks ?? completed} />
+        <Card title="Pending" value={analytics?.pendingTasks ?? pending} />
+        <Card title="Overdue" value={analytics?.overdueTasks ?? 0} />
+        <Card title="Due Today" value={analytics?.dueToday ?? 0} />
+        <Card title="Shared" value={analytics?.sharedTasks ?? 0} />
+        <Card title="Completion" value={`${analytics?.completionRate ?? 0}%`} />
       </div>
 
       {/* TASK LIST */}

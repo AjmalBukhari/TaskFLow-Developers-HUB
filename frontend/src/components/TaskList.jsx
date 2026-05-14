@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
-import { getAllTasks, deleteTask } from "../services/api";
+import { getAllTasks, deleteTask, shareTask } from "../services/api";
 import TaskForm from "./TaskForm";
 
 import SearchBar from "./SearchBar";
@@ -101,6 +101,20 @@ export default function TaskList() {
               className="text-blue-500"
             >
               Edit
+            </button>
+
+            <button
+              onClick={async () => {
+                const userIds = prompt("Enter user IDs to share with (comma separated):");
+                if (userIds) {
+                  const ids = userIds.split(',').map(id => id.trim()).filter(id => id);
+                  await shareTask(task._id, ids);
+                  alert("Task shared!");
+                }
+              }}
+              className="text-green-500"
+            >
+              Share
             </button>
 
             <button

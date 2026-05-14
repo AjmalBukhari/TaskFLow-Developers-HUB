@@ -3,6 +3,7 @@ import { useState } from "react";
 import MainLayout from "./components/layout/MainLayout";
 import Auth from "./components/Auth";
 import Toast from "./components/ui/Toast";
+import { NotificationProvider } from "./context/NotificationContext";
 
 import Dashboard from "./components/pages/Dashboard";
 import AddTask from "./components/pages/AddTask";
@@ -51,53 +52,55 @@ export default function App() {
   // ================= MAIN APP =================
   return (
     <>
-      <MainLayout onSearch={setSearch} onLogout={() => setIsAuth(false)}>
-        {(activeMenu, setActiveMenuPage) => {
-          switch (activeMenu) {
-            case "Dashboard":
-              return (
-                <Dashboard
-                  showToast={showToast}
-                  onChange={setActiveMenuPage}
-                  search={search}
-                />
-              );
+      <NotificationProvider>
+        <MainLayout onSearch={setSearch} onLogout={() => setIsAuth(false)}>
+          {(activeMenu, setActiveMenuPage) => {
+            switch (activeMenu) {
+              case "Dashboard":
+                return (
+                  <Dashboard
+                    showToast={showToast}
+                    onChange={setActiveMenuPage}
+                    search={search}
+                  />
+                );
 
-            case "All Tasks":
-              return <AllTasks showToast={showToast} />;
+              case "All Tasks":
+                return <AllTasks showToast={showToast} />;
 
-            case "Add Task":
-              return <AddTask showToast={showToast} />;
+              case "Add Task":
+                return <AddTask showToast={showToast} />;
 
-            case "Bin Task":
-              return <BinTask showToast={showToast} />;
+              case "Bin Task":
+                return <BinTask showToast={showToast} />;
 
-            case "Contact Us":
-              return (
-                <div className="bg-white p-6 rounded-xl shadow-sm">
-                  <h2 className="text-xl font-semibold mb-3">Contact Us</h2>
-                  <p className="text-sm text-gray-500">
-                    This section can include a contact form.
-                  </p>
-                </div>
-              );
+              case "Contact Us":
+                return (
+                  <div className="bg-white p-6 rounded-xl shadow-sm">
+                    <h2 className="text-xl font-semibold mb-3">Contact Us</h2>
+                    <p className="text-sm text-gray-500">
+                      This section can include a contact form.
+                    </p>
+                  </div>
+                );
 
-            case "Profile":
-              return <Profile showToast={showToast} />;
+              case "Profile":
+                return <Profile showToast={showToast} />;
 
-            case "Account":
-              return (
-                <Account
-                  showToast={showToast}
-                  onLogout={() => setIsAuth(false)}
-                />
-              );
+              case "Account":
+                return (
+                  <Account
+                    showToast={showToast}
+                    onLogout={() => setIsAuth(false)}
+                  />
+                );
 
-            default:
-              return <Dashboard showToast={showToast} search={search} />;
-          }
-        }}
-      </MainLayout>
+              default:
+                return <Dashboard showToast={showToast} search={search} />;
+            }
+          }}
+        </MainLayout>
+      </NotificationProvider>
 
       {/* GLOBAL TOAST */}
       <Toast toasts={toasts} removeToast={removeToast} />

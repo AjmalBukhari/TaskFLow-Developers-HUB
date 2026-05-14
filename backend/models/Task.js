@@ -23,6 +23,7 @@ const taskSchema = new mongoose.Schema({
   deletedAt: {
     type: Date,
     default: null,
+    index: { expires: '7d' } // auto delete after 7 days
   },
   priority: {
     type: String,
@@ -32,17 +33,31 @@ const taskSchema = new mongoose.Schema({
     type: Boolean,
     default: false,
   },
-  deletedAt: {
-    type: Date,
-    default: null,
-    index: { expires: '7d' } // auto delete after 7 days
-  },
   user: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
     required: true,
   },
-  dueDate: Date
+  dueDate: Date,
+  // Phase-2: Task Sharing
+  owner: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    default: function() { return this.user; }
+  },
+  sharedWith: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User'
+  }],
+  // Phase-2: Task Attachments
+  attachments: [{
+    filename: String,
+    fileUrl: String,
+    uploadedAt: {
+      type: Date,
+      default: Date.now
+    }
+  }]
 }, { timestamps: true });
 
 module.exports = mongoose.model('Task', taskSchema);

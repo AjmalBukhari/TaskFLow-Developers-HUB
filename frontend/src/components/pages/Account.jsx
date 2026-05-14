@@ -124,6 +124,16 @@ export default function Account({ showToast, onLogout }) {
           disabled
         />
 
+        {/* User ID Display */}
+        <div>
+          <label className="block text-xs font-medium text-gray-500 mb-1">
+            User ID
+          </label>
+          <div className="w-full bg-gray-50 border border-gray-200 p-2 rounded text-sm font-mono text-gray-600">
+            {user._id}
+          </div>
+        </div>
+
         <input
           name="password"
           type="password"

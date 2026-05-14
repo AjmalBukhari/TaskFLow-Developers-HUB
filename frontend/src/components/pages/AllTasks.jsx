@@ -1,9 +1,11 @@
 import { useCallback, useEffect, useState } from "react";
 import { motion } from "framer-motion";
 
-import { getAllTasks, deleteTask } from "../../services/api";
+import { getAllTasks, deleteTask, shareTask } from "../../services/api";
 import SearchBar from "../SearchBar";
 import TaskForm from "../TaskForm";
+import ConfirmModal from "../ui/ConfirmModal";
+import ShareModal from "../ui/ShareModal";
 
 
 export default function AllTasks({ showToast }) {
@@ -13,6 +15,17 @@ export default function AllTasks({ showToast }) {
   const [status, setStatus] = useState("");
   const [loading, setLoading] = useState(false);
   const [editingTask, setEditingTask] = useState(null);
+  const [confirmModal, setConfirmModal] = useState({
+    isOpen: false,
+    type: "default",
+    title: "",
+    message: "",
+    onConfirm: () => {}
+  });
+  const [shareModal, setShareModal] = useState({
+    isOpen: false,
+    taskId: null
+  });
 
   const [currentPage, setCurrentPage] = useState(1);
   const tasksPerPage = 7;
@@ -58,25 +71,36 @@ export default function AllTasks({ showToast }) {
 
   // ================= DELETE =================
   const handleDelete = async (id) => {
-    if (!window.confirm("Delete this task?")) return;
-
-    try {
-      await deleteTask(id);
-      showToast("Task deleted", "error");
-      fetchTasks();
-    } catch {
-      showToast("Delete failed", "error");
-    }
+    setConfirmModal({
+      isOpen: true,
+      type: "danger",
+      title: "Delete Task",
+      message: "Are you sure you want to delete this task? It will be moved to the bin.",
+      onConfirm: async () => {
+        try {
+          await deleteTask(id);
+          showToast("Task deleted", "error");
+          fetchTasks();
+        } catch {
+          showToast("Delete failed", "error");
+        }
+      }
+    });
   };
 
   const handleBulkDelete = async () => {
-    if (!window.confirm("Delete selected tasks?")) return;
-
-    await Promise.all(selected.map((id) => deleteTask(id)));
-
-    showToast("Selected tasks deleted", "error");
-    setSelected([]);
-    fetchTasks();
+    setConfirmModal({
+      isOpen: true,
+      type: "danger",
+      title: "Delete Selected Tasks",
+      message: `Are you sure you want to delete ${selected.length} task(s)? They will be moved to the bin.`,
+      onConfirm: async () => {
+        await Promise.all(selected.map((id) => deleteTask(id)));
+        showToast("Selected tasks deleted", "error");
+        setSelected([]);
+        fetchTasks();
+      }
+    });
   };
 
   // ================= PAGINATION =================
@@ -191,6 +215,13 @@ export default function AllTasks({ showToast }) {
                   </button>
 
                   <button
+                    onClick={() => setShareModal({ isOpen: true, taskId: task._id })}
+                    className="text-green-500 text-sm"
+                  >
+                    Share
+                  </button>
+
+                  <button
                     onClick={() => handleDelete(task._id)}
                     className="text-red-500 text-sm"
                   >
@@ -229,6 +260,31 @@ export default function AllTasks({ showToast }) {
           </div>
         )}
       </div>
+
+      {/* CONFIRM MODAL */}
+      <ConfirmModal
+        isOpen={confirmModal.isOpen}
+        onClose={() => setConfirmModal({ ...confirmModal, isOpen: false })}
+        onConfirm={confirmModal.onConfirm}
+        title={confirmModal.title}
+        message={confirmModal.message}
+        type={confirmModal.type}
+        confirmText={confirmModal.type === "danger" ? "Delete" : "Confirm"}
+      />
+
+      {/* SHARE MODAL */}
+      <ShareModal
+        isOpen={shareModal.isOpen}
+        onClose={() => setShareModal({ isOpen: false, taskId: null })}
+        onShare={async (ids) => {
+          try {
+            await shareTask(shareModal.taskId, ids);
+            showToast("Task shared!", "success");
+          } catch {
+            showToast("Failed to share task", "error");
+          }
+        }}
+      />
 
       {/* EDIT MODAL */}
       {editingTask && (
