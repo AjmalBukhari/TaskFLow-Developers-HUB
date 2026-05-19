@@ -4,7 +4,7 @@ const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const http = require('http');
-const socketIo = require('socket.io');
+const { init: initSocket } = require('./services/socket');
 
 const config = require('./config/config');
 const errorHandler = require('./utils/errorHandler');
@@ -16,21 +16,10 @@ const analyticsRoutes = require('./routes/analytics');
 
 const app = express();
 const server = http.createServer(app);
-const io = socketIo(server, {
-  cors: {
-    origin: config.corsOrigin,
-    methods: ["GET", "POST"]
-  }
-});
+const io = initSocket(server);
 
 app.use(cors());
 app.use(express.json());
-
-// Attach io to requests
-app.use((req, res, next) => {
-  req.io = io;
-  next();
-});
 
 // Routes
 app.use('/api/tasks', taskRoutes);

@@ -2,6 +2,7 @@ const Task = require('../models/Task');
 const User = require('../models/User');
 const Notification = require('../models/Notification');
 const AppError = require('../utils/appError');
+const { getIO } = require('../services/socket');
 
 // ================= CREATE TASK =================
 exports.createTask = async (req, res, next) => {
@@ -13,7 +14,7 @@ exports.createTask = async (req, res, next) => {
     });
 
     // Emit real-time notification for task creation (optional)
-    req.io.to(req.user.id).emit('task_created', task);
+    getIO().to(req.user.id).emit('task_created', task);
 
     res.status(201).json({
       status: 'success',
@@ -105,11 +106,11 @@ exports.updateTask = async (req, res, next) => {
     const updatedTask = await Task.findByIdAndUpdate(
       req.params.id,
       req.body,
-      { new: true, runValidators: true }
+      { returnDocument: 'after', runValidators: true }
     );
 
     // Emit real-time notification for task update
-    req.io.to(task.user.toString()).emit('task_updated', updatedTask);
+    getIO().to(task.user.toString()).emit('task_updated', updatedTask);
 
     res.json({
       status: 'success',
@@ -138,7 +139,7 @@ exports.deleteTask = async (req, res, next) => {
     await task.save();
 
     // Emit real-time notification for task deletion
-    req.io.to(task.user.toString()).emit('task_deleted', task._id);
+    getIO().to(task.user.toString()).emit('task_deleted', task._id);
 
     res.json({
       status: 'success',
@@ -185,7 +186,7 @@ exports.restoreTask = async (req, res, next) => {
     await task.save();
 
     // Emit real-time notification for task restoration
-    req.io.to(task.user.toString()).emit('task_restored', task._id);
+    getIO().to(task.user.toString()).emit('task_restored', task._id);
 
     res.json({
       status: 'success',
@@ -212,7 +213,7 @@ exports.permanentDelete = async (req, res, next) => {
     await task.deleteOne();
 
     // Emit real-time notification for task deletion
-    req.io.to(task.user.toString()).emit('task_permanently_deleted', task._id);
+    getIO().to(task.user.toString()).emit('task_permanently_deleted', task._id);
 
     res.json({
       status: 'success',
@@ -278,7 +279,7 @@ exports.shareTask = async (req, res, next) => {
 
     // Emit real-time notifications to shared users
     users.forEach(user => {
-      req.io.to(user._id.toString()).emit('new_notification', {
+      getIO().to(user._id.toString()).emit('new_notification', {
         recipient: user._id,
         message: notifications[0].message,
         taskId: task._id

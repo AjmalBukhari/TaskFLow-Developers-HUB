@@ -69,9 +69,9 @@ export default function App() {
   });
 
   // Listen for task creation
-  useSocket('task_created', (task) => {
-    showToast(`Task "${task.title}" created`, 'success');
-  });
+  // useSocket('task_created', (task) => {
+  //   showToast(`Task "${task.title}" created`, 'success');
+  // });
 
   // Listen for task deletion
   useSocket('task_deleted', (taskId) => {
