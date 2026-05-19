@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
+import { Link } from "react-router-dom";
 import { loginUser, registerUser } from "../services/api";
 
-export default function Auth({ onAuth, showToast, onNavigateChangePassword }) {
+export default function Auth({ onAuth, showToast }) {
   const [isLogin, setIsLogin] = useState(true);
 
   const [form, setForm] = useState({
@@ -110,12 +111,12 @@ export default function Auth({ onAuth, showToast, onNavigateChangePassword }) {
           />
 
           {/* FORGOT PASSWORD LINK */}
-          <p
-            onClick={() => onNavigateChangePassword?.()}
-            className="text-sm text-center cursor-pointer text-indigo-600 hover:underline"
+          <Link
+            to="/forgot-password"
+            className="text-sm text-center block text-indigo-600 hover:underline"
           >
             Forgot Password?
-          </p>
+          </Link>
 
           {/* BUTTON */}
           <button

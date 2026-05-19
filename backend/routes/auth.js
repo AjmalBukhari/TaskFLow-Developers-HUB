@@ -10,6 +10,9 @@ router.post('/register', authController.register);
 // ================= LOGIN =================
 router.post('/login', authController.login);
 
+// ================= FORGOT PASSWORD =================
+router.post('/forgot-password', authController.forgotPassword);
+
 // ================= PROFILE GET =================
 router.get('/me', auth, authController.getCurrentUser);
 

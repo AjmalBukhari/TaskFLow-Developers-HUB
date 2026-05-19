@@ -9,6 +9,7 @@ import { NotificationProvider } from "./context/NotificationContext";
 import Dashboard from "./components/pages/Dashboard";
 import AddTask from "./components/pages/AddTask";
 import BinTask from "./components/pages/BinTask";
+import ForgotPassword from "./components/pages/ForgotPassword";
 
 import Profile from "./components/pages/Profile";
 import AllTasks from "./components/pages/AllTasks";
@@ -81,8 +82,7 @@ export default function App() {
   if (!isAuth) {
     return (
       <>
-        <Auth onAuth={() => setIsAuth(true)} showToast={showToast} onNavigateChangePassword={handleNavigateChangePassword} />
-
+        <Auth onAuth={() => setIsAuth(true)} showToast={showToast} />
         <Toast toasts={toasts} removeToast={removeToast} />
       </>
     );
@@ -133,6 +133,9 @@ export default function App() {
                     onLogout={() => setIsAuth(false)}
                   />
                 );
+
+              case "Forgot Password":
+                return <ForgotPassword />;
 
               default:
                 return <Dashboard showToast={showToast} search={search} />;

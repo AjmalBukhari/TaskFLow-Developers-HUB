@@ -1,28 +1,9 @@
 const jwt = require('jsonwebtoken');
 const AppError = require('../utils/appError');
+const User = require('../models/User');
 
-module.exports = (req, res, next) => {
-  const header = req.header('Authorization');
-
-  if (!header) {
-    return next(AppError('No token provided', 401));
-  }
-
-  try {
-    const token = header.replace('Bearer ', '');
-
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-
-    req.user = decoded;
-
-    next();
-  } catch (err) {
-    return next(AppError('Invalid token', 401));
-  }
-};
-
-// Enhanced auth middleware that attaches user document
-module.exports.protect = async (req, res, next) => {
+// Auth middleware that verifies JWT token
+module.exports = async (req, res, next) => {
   try {
     const token = req.header('Authorization')?.replace('Bearer ', '');
     
@@ -33,7 +14,6 @@ module.exports.protect = async (req, res, next) => {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     
     // Get user from database
-    const User = require('../models/User');
     const user = await User.findById(decoded.id);
     
     if (!user) {

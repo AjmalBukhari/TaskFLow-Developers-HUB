@@ -26,6 +26,12 @@ const io = socketIo(server, {
 app.use(cors());
 app.use(express.json());
 
+// Attach io to requests
+app.use((req, res, next) => {
+  req.io = io;
+  next();
+});
+
 // Routes
 app.use('/api/tasks', taskRoutes);
 app.use('/api/auth', authRoutes);
@@ -46,9 +52,6 @@ io.on('connection', (socket) => {
     console.log('User disconnected:', socket.id);
   });
 });
-
-// Make io accessible to routes
-app.set('io', io);
 
 // Error handling middleware
 app.use(errorHandler);

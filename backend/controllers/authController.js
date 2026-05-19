@@ -151,6 +151,30 @@ exports.updatePassword = async (req, res, next) => {
   }
 };
 
+// ================= FORGOT PASSWORD =================
+exports.forgotPassword = async (req, res, next) => {
+  try {
+    const { email, newPassword } = req.body;
+
+    // Check if user exists
+    const user = await User.findOne({ email });
+    if (!user) {
+      return next(AppError('User not found', 404));
+    }
+
+    // Update password
+    user.password = newPassword;
+    await user.save();
+
+    res.json({
+      status: 'success',
+      message: 'Password updated successfully'
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
 // ================= DELETE USER =================
 exports.deleteUser = async (req, res, next) => {
   try {

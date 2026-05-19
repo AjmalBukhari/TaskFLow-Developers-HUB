@@ -3,8 +3,7 @@ import { motion } from 'framer-motion';
 import {
   getProfile,
   updateProfile,
-  deleteAccount,
-  updatePassword
+  deleteAccount
 } from '../../services/api';
 
 export default function Account({ showToast, onLogout }) {
@@ -13,10 +12,7 @@ export default function Account({ showToast, onLogout }) {
   const [form, setForm] = useState({
     fullname: '',
     email: '',
-    password: '',
-    currentPassword: '',
-    newPassword: '',
-    confirmPassword: ''
+    password: ''
   });
   const [loading, setLoading] = useState(false);
 
@@ -66,49 +62,9 @@ export default function Account({ showToast, onLogout }) {
     }
   };
 
-  // ================= CHANGE PASSWORD =================
-  const handleChangePassword = async () => {
-    if (!form.currentPassword || !form.newPassword || !form.confirmPassword) {
-      return showToast("All fields are required", "warning");
-    }
-
-    if (form.newPassword !== form.confirmPassword) {
-      return showToast("Passwords do not match", "warning");
-    }
-
-    if (form.newPassword.length < 6) {
-      return showToast("Password must be at least 6 characters", "warning");
-    }
-
-    try {
-      setLoading(true);
-
-      await updatePassword({
-        currentPassword: form.currentPassword,
-        newPassword: form.newPassword
-      });
-
-      showToast("Password changed successfully");
-      setForm({
-        ...form,
-        currentPassword: '',
-        newPassword: '',
-        confirmPassword: ''
-      });
-    } catch {
-      showToast("Failed to change password", "error");
-    } finally {
-      setLoading(false);
-    }
-  };
-
   // ================= DELETE ACCOUNT =================
-  const handleDeleteAccount = async () => {
-    const confirm = window.confirm(
-      'Are you sure? This will permanently delete your account and all tasks.'
-    );
-
-    if (!confirm) return;
+  const handleDelete = async () => {
+    if (!window.confirm('Are you sure you want to delete your account? This will permanently delete your account and all tasks.')) return;
 
     try {
       setLoading(true);
@@ -146,71 +102,64 @@ export default function Account({ showToast, onLogout }) {
         </p>
       </div>
 
-      {/* ================= CHANGE PASSWORD ================= */}
+      {/* ================= ACCOUNT FORM ================= */}
       <div className="bg-white p-6 rounded-xl shadow-sm border space-y-4">
+        <h2 className="text-lg font-medium">Update Account</h2>
 
-        <h2 className="text-lg font-medium">Change Password</h2>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Full Name
+          </label>
+          <input
+            name="fullname"
+            type="text"
+            value={form.fullname}
+            onChange={handleChange}
+            placeholder="Enter your full name"
+            className="w-full border p-2 rounded focus:ring-2 focus:ring-indigo-500"
+          />
+        </div>
 
-        <input
-          name="currentPassword"
-          type="password"
-          value={form.currentPassword}
-          onChange={handleChange}
-          placeholder="Current Password"
-          className="w-full border p-2 rounded focus:ring-2 focus:ring-indigo-500"
-        />
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Email
+          </label>
+          <input
+            name="email"
+            type="email"
+            value={form.email}
+            onChange={handleChange}
+            placeholder="Enter your email"
+            className="w-full border p-2 rounded focus:ring-2 focus:ring-indigo-500"
+          />
+        </div>
 
-        <input
-          name="newPassword"
-          type="password"
-          value={form.newPassword}
-          onChange={handleChange}
-          placeholder="New Password"
-          className="w-full border p-2 rounded focus:ring-2 focus:ring-indigo-500"
-        />
-
-        <input
-          name="confirmPassword"
-          type="password"
-          value={form.confirmPassword}
-          onChange={handleChange}
-          placeholder="Confirm New Password"
-          className="w-full border p-2 rounded focus:ring-2 focus:ring-indigo-500"
-        />
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            New Password (optional)
+          </label>
+          <input
+            name="password"
+            type="password"
+            value={form.password}
+            onChange={handleChange}
+            placeholder="New password"
+            className="w-full border p-2 rounded focus:ring-2 focus:ring-indigo-500"
+          />
+        </div>
 
         <button
-          onClick={handleChangePassword}
+          onClick={handleUpdate}
           disabled={loading}
           className="bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700 transition disabled:opacity-50"
         >
-          {loading ? 'Changing...' : 'Change Password'}
+          {loading ? 'Updating...' : 'Update Account'}
         </button>
-
       </div>
 
-      {/* ================= ACCOUNT FORM ================= */}
-      <div className="bg-white p-6 rounded-xl shadow-sm border space-y-4">
-
-        <h2 className="text-lg font-medium">Account Information</h2>
-
-        <input
-          name="fullname"
-          value={form.fullname}
-          onChange={handleChange}
-          placeholder="Full Name"
-          className="w-full border p-2 rounded focus:ring-2 focus:ring-indigo-500"
-        />
-
-        <input
-          name="email"
-          value={form.email}
-          onChange={handleChange}
-          placeholder="Email"
-          className="w-full border p-2 rounded focus:ring-2 focus:ring-indigo-500"
-          disabled
-        />
-
-        {/* User ID Display */}
+      {/* User ID Display */}
+      <div className="bg-white p-6 rounded-xl shadow-sm border space-y-2">
+        <h2 className="text-lg font-medium">User Information</h2>
         <div>
           <label className="block text-xs font-medium text-gray-500 mb-1">
             User ID
@@ -219,44 +168,33 @@ export default function Account({ showToast, onLogout }) {
             {user._id}
           </div>
         </div>
-
-        <input
-          name="password"
-          type="password"
-          value={form.password}
-          onChange={handleChange}
-          placeholder="New Password (optional)"
-          className="w-full border p-2 rounded focus:ring-2 focus:ring-indigo-500"
-        />
-
-        <button
-          onClick={handleUpdate}
-          disabled={loading}
-          className="bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700 transition disabled:opacity-50"
-        >
-          {loading ? 'Saving...' : 'Save Changes'}
-        </button>
-
+        <div>
+          <label className="block text-xs font-medium text-gray-500 mb-1">
+            Email
+          </label>
+          <div className="text-sm text-gray-700">{user.email}</div>
+        </div>
+        <div>
+          <label className="block text-xs font-medium text-gray-500 mb-1">
+            Full Name
+          </label>
+          <div className="text-sm text-gray-700">{user.fullname}</div>
+        </div>
       </div>
 
-      {/* ================= DANGER ZONE ================= */}
-      <div className="bg-red-50 border border-red-200 p-6 rounded-xl space-y-3">
-
-        <h2 className="text-lg font-medium text-red-600">
-          Danger Zone
-        </h2>
-
-        <p className="text-sm text-red-500">
-          Once you delete your account, there is no going back. All your data will be permanently removed.
+      {/* ================= DELETE ACCOUNT ================= */}
+      <div className="bg-white p-6 rounded-xl shadow-sm border space-y-4">
+        <h2 className="text-lg font-medium text-red-600">Danger Zone</h2>
+        <p className="text-sm text-gray-500">
+          Permanently delete your account and all your tasks.
         </p>
-
         <button
-          onClick={handleDeleteAccount}
-          className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 transition"
+          onClick={handleDelete}
+          disabled={loading}
+          className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 transition disabled:opacity-50"
         >
-          Delete Account
+          {loading ? 'Deleting...' : 'Delete Account'}
         </button>
-
       </div>
 
     </motion.div>
