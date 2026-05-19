@@ -6,9 +6,10 @@ export default function Sidebar({ active, onChange }) {
     { name: 'Dashboard', icon: '📊' },
     { name: 'All Tasks', icon: '📋' },
     { name: 'Add Task', icon: '➕' },
+    { name: 'Analytics', icon: '📈' },
     { name: 'Bin Task', icon: '🗑️' },
-    // { name: 'Profile', icon: '👤' },
-    { name: 'Contact Us', icon: '✉️' },
+    { name: 'Profile', icon: '👤' },
+    { name: 'Account', icon: '⚙️' },
   ];
 
   return (

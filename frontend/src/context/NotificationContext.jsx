@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { io } from 'socket.io-client';
-import { getNotifications, markAllNotificationsRead } from '../services/api';
+import socketService, { useSocket } from '../services/socketService';
+import { getNotifications, markAsRead, markAllAsRead, getUnreadCount } from '../services/api';
 
 const NotificationContext = createContext();
 
@@ -15,39 +15,124 @@ export const useNotifications = () => {
 export const NotificationProvider = ({ children }) => {
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
-  const [socket, setSocket] = useState(null);
+  const [loading, setLoading] = useState(false);
 
+  // Fetch notifications
+  const fetchNotifications = async () => {
+    try {
+      setLoading(true);
+      const { data } = await getNotifications();
+      setNotifications(data);
+      
+      // Update unread count
+      const unread = data.filter(n => !n.read).length;
+      setUnreadCount(unread);
+    } catch (error) {
+      console.error('Error fetching notifications:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Fetch unread count
+  const fetchUnreadCount = async () => {
+    try {
+      const { data } = await getUnreadCount();
+      setUnreadCount(data.unreadCount);
+    } catch (error) {
+      console.error('Error fetching unread count:', error);
+    }
+  };
+
+  // Mark notification as read
+  const markNotificationAsRead = async (id) => {
+    try {
+      const { data } = await markAsRead(id);
+      setNotifications(prev => 
+        prev.map(n => n._id === id ? { ...n, read: true } : n)
+      );
+      setUnreadCount(prev => prev - 1);
+      return data;
+    } catch (error) {
+      console.error('Error marking notification as read:', error);
+      throw error;
+    }
+  };
+
+  // Mark all notifications as read
+  const markAllNotificationsAsRead = async () => {
+    try {
+      await markAllAsRead();
+      setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+      setUnreadCount(0);
+    } catch (error) {
+      console.error('Error marking all notifications as read:', error);
+      throw error;
+    }
+  };
+
+  // Delete notification
+  const deleteNotification = async (id) => {
+    try {
+      await fetch(`/api/notifications/${id}`, { method: 'DELETE' });
+      setNotifications(prev => prev.filter(n => n._id !== id));
+      setUnreadCount(prev => prev - 1);
+    } catch (error) {
+      console.error('Error deleting notification:', error);
+      throw error;
+    }
+  };
+
+  // Initialize socket connection and listeners
   useEffect(() => {
-    const token = localStorage.getItem('token');
-    if (!token) return;
+    // Connect socket
+    socketService.connect();
 
-    // Initialize Socket.IO connection
-    const newSocket = io('http://localhost:5000', {
-      transports: ['websocket'],
-      auth: { token }
-    });
-
-    newSocket.on('connect', () => {
-      console.log('Socket connected:', newSocket.id);
-    });
-
-    newSocket.on('notification', (notification) => {
+    // Listen for real-time notifications
+    useSocket('new_notification', (notification) => {
       setNotifications(prev => [notification, ...prev]);
       setUnreadCount(prev => prev + 1);
     });
 
-    setSocket(newSocket);
+    // Listen for task updates
+    useSocket('task_updated', (task) => {
+      // Update task in notifications if exists
+      setNotifications(prev => 
+        prev.map(n => 
+          n.taskId?._id === task._id 
+            ? { ...n, message: `Task "${task.title}" status was updated to ${task.status}` }
+            : n
+        )
+      );
+    });
 
-    // Fetch existing notifications
+    // Fetch initial data
     fetchNotifications();
+    fetchUnreadCount();
 
     return () => {
-      newSocket.disconnect();
+      // Cleanup socket listeners
+      socketService.disconnect();
     };
   }, []);
 
-  const fetchNotifications = async () => {
-    try {
+  const value = {
+    notifications,
+    unreadCount,
+    loading,
+    fetchNotifications,
+    fetchUnreadCount,
+    markNotificationAsRead,
+    markAllNotificationsAsRead,
+    deleteNotification
+  };
+
+  return (
+    <NotificationContext.Provider value={value}>
+      {children}
+    </NotificationContext.Provider>
+  );
+};
       const { data } = await getNotifications();
       setNotifications(data);
       setUnreadCount(data.filter(n => !n.read).length);

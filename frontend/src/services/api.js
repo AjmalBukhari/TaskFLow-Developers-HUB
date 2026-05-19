@@ -78,6 +78,56 @@ export const getBinTasks = () =>
 export const restoreTask = (id) =>
   API.put(`/tasks/restore/${id}`);
 
+// Permanent delete
+export const permanentDelete = (id) =>
+  API.delete(`/tasks/permanent/${id}`);
+
+// ================= SHARING =================
+
+// Share task
+export const shareTask = (id, userIds) =>
+  API.put(`/tasks/${id}/share`, { userIds });
+
+// Get shared tasks
+export const getSharedTasks = () =>
+  API.get('/tasks/shared');
+
+// ================= ANALYTICS =================
+
+// Get analytics overview
+export const getAnalyticsOverview = () =>
+  API.get('/analytics/overview');
+
+// Get analytics trends
+export const getAnalyticsTrends = (period) =>
+  API.get('/analytics/trends', { params: { period } });
+
+// Get user analytics
+export const getUserAnalytics = () =>
+  API.get('/analytics/user');
+
+// ================= NOTIFICATIONS =================
+
+// Get notifications
+export const getNotifications = () =>
+  API.get('/notifications');
+
+// Mark notification as read
+export const markAsRead = (id) =>
+  API.put(`/notifications/${id}/read`);
+
+// Mark all notifications as read
+export const markAllAsRead = () =>
+  API.put('/notifications/read-all');
+
+// Delete notification
+export const deleteNotification = (id) =>
+  API.delete(`/notifications/${id}`);
+
+// Get unread count
+export const getUnreadCount = () =>
+  API.get('/notifications/unread-count');
+
 // Permanently delete
 export const permanentDeleteTask = (id) =>
   API.delete(`/tasks/permanent/${id}`);

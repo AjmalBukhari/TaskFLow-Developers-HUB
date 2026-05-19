@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import socketService, { useSocket } from "./services/socketService";
 
 import MainLayout from "./components/layout/MainLayout";
 import Auth from "./components/Auth";
@@ -8,6 +9,7 @@ import { NotificationProvider } from "./context/NotificationContext";
 import Dashboard from "./components/pages/Dashboard";
 import AddTask from "./components/pages/AddTask";
 import BinTask from "./components/pages/BinTask";
+import Analytics from "./components/pages/Analytics";
 
 import Profile from "./components/pages/Profile";
 import AllTasks from "./components/pages/AllTasks";
@@ -37,6 +39,37 @@ export default function App() {
   const removeToast = (id) => {
     setToasts((prev) => prev.filter((t) => t.id !== id));
   };
+
+  // ================= SOCKET CONNECTION =================
+  useEffect(() => {
+    if (isAuth) {
+      socketService.connect();
+    }
+
+    return () => {
+      socketService.disconnect();
+    };
+  }, [isAuth]);
+
+  // Listen for real-time notifications
+  useSocket('new_notification', (notification) => {
+    showToast(notification.message, 'info');
+  });
+
+  // Listen for task updates
+  useSocket('task_updated', (task) => {
+    showToast(`Task "${task.title}" updated`, 'info');
+  });
+
+  // Listen for task creation
+  useSocket('task_created', (task) => {
+    showToast(`Task "${task.title}" created`, 'success');
+  });
+
+  // Listen for task deletion
+  useSocket('task_deleted', (taskId) => {
+    showToast('Task deleted', 'error');
+  });
 
   // ================= AUTH SCREEN =================
   if (!isAuth) {

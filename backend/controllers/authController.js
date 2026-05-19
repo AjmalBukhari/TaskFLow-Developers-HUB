@@ -2,6 +2,7 @@ const User = require('../models/User');
 const Task = require('../models/Task');
 const Notification = require('../models/Notification');
 const AppError = require('../utils/appError');
+const jwt = require('jsonwebtoken');
 
 // ================= REGISTER USER =================
 exports.register = async (req, res, next) => {

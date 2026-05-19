@@ -6,6 +6,9 @@ const cors = require('cors');
 const http = require('http');
 const socketIo = require('socket.io');
 
+const config = require('./config/config');
+const errorHandler = require('./utils/errorHandler');
+
 const taskRoutes = require('./routes/tasks');
 const authRoutes = require('./routes/auth');
 const notificationRoutes = require('./routes/notifications');
@@ -15,7 +18,7 @@ const app = express();
 const server = http.createServer(app);
 const io = socketIo(server, {
   cors: {
-    origin: "*",
+    origin: config.corsOrigin,
     methods: ["GET", "POST"]
   }
 });
@@ -23,6 +26,7 @@ const io = socketIo(server, {
 app.use(cors());
 app.use(express.json());
 
+// Routes
 app.use('/api/tasks', taskRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/notifications', notificationRoutes);
@@ -35,6 +39,7 @@ io.on('connection', (socket) => {
   // Join room based on user ID
   socket.on('join', (userId) => {
     socket.join(userId);
+    console.log(`User ${userId} joined room`);
   });
 
   socket.on('disconnect', () => {
@@ -45,11 +50,17 @@ io.on('connection', (socket) => {
 // Make io accessible to routes
 app.set('io', io);
 
-mongoose.connect(process.env.MONGO_URI)
-.then(() => {
-  console.log('MongoDB Connected');
-  server.listen(5000, () => console.log('Server running on port 5000'));
-})
-.catch(err => console.error(err));
+// Error handling middleware
+app.use(errorHandler);
+
+// Database connection
+mongoose.connect(config.mongoURI)
+  .then(() => {
+    console.log('MongoDB Connected');
+    server.listen(config.port, () => 
+      console.log(`Server running on port ${config.port}`)
+    );
+  })
+  .catch(err => console.error('Database connection error:', err));
 
 module.exports = { app, io };

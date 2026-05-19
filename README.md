@@ -1,91 +1,90 @@
 # 🚀 TaskFlow - Full Stack Task Management App
 
-TaskFlow is a full-stack task management application built with **React, Node.js, Express, and MongoDB**.
-It allows users to manage tasks efficiently with features like authentication, task tracking, bin system, and account management.
+TaskFlow is a comprehensive full-stack task management application built with **React, Node.js, Express, and MongoDB**. It provides a complete solution for task management with advanced features like real-time collaboration, analytics, and notifications.
 
 ---
 
 # 📌 Features
 
-## 🔐 Authentication
-
-* User Registration & Login (JWT आधारित)
+## 🔐 Authentication & Security
+* User Registration & Login (JWT-based)
 * Protected routes (only logged-in users can access tasks)
 * Secure password hashing (bcrypt)
-
----
+* Role-based access control
+* Token-based authentication
 
 ## 📋 Task Management
-
 * Create, edit, delete tasks
 * Task status: **Pending / In Progress / Completed**
 * Priority levels: **Low / Medium / High**
-* Due date support
+* Due date support with reminders
 * Pin important tasks 📌
+* Soft delete with bin system
+* Task sharing with multiple users
 
----
+## 🗂️ Organization
+* Task search and filtering
+* Bulk operations (select & delete multiple tasks)
+* Task categorization
+* Status-based organization
+* Priority-based sorting
 
-## 🗑️ Bin System
+## 📊 Analytics Dashboard
+* Real-time task statistics
+* Completion rate tracking
+* Overdue task alerts
+* Weekly and monthly trends
+* Task distribution charts
+* Productivity insights
 
-* Soft delete (tasks moved to bin)
-* Restore deleted tasks
-* Permanent delete option
-* Auto-delete after 7 days
+## 🔄 Real-time Collaboration
+* Socket.IO for real-time updates
+* Live notifications for task changes
+* Task sharing with collaborators
+* Real-time status updates
+* Instant notifications
 
----
-
-## 📊 Dashboard
-
-* Task statistics (Total / Completed / Pending)
-* Progress bar
-* Recent tasks preview
-
----
-
-## 📋 All Tasks Page
-
-* Full task list
-* Search & filter
-* Pagination
-* Bulk selection & delete
-* Edit task (modal)
-
----
-
-## 👤 User System
-
-* Profile management (update name & password)
-* Account settings page
-* Delete account (removes all user data)
-
----
-
-## 🎨 UI / UX
-
-* Clean and minimal UI
-* Sidebar navigation
-* Header with search + profile dropdown
-* Toast notifications (success/error alerts)
+## 📱 User Experience
+* Clean and modern UI with Tailwind CSS
+* Responsive design for all devices
 * Smooth animations (Framer Motion)
+* Toast notifications
+* Loading states
+* Error handling
+
+## 🔔 Notification System
+* Real-time notifications
+* Email notifications (optional)
+* Notification center
+* Mark as read functionality
+* Unread count tracking
 
 ---
 
 # 🛠️ Tech Stack
 
 ### Frontend
-
-* React.js
-* Tailwind CSS
-* Framer Motion
-* Axios
+* **React.js** - Modern UI framework
+* **Tailwind CSS** - Utility-first CSS framework
+* **Framer Motion** - Animation library
+* **Axios** - HTTP client for API calls
+* **Socket.IO Client** - Real-time communication
+* **React Router** - Client-side routing
 
 ### Backend
+* **Node.js** - JavaScript runtime
+* **Express.js** - Web framework
+* **MongoDB + Mongoose** - Database and ODM
+* **JWT Authentication** - Token-based auth
+* **bcrypt.js** - Password hashing
+* **Socket.IO** - Real-time communication
+* **Express Validator** - Input validation
 
-* Node.js
-* Express.js
-* MongoDB + Mongoose
-* JWT Authentication
-* bcrypt.js
+### Development & Testing
+* **ESLint** - Code linting
+* **Prettier** - Code formatting
+* **Jest** - Testing framework
+* **Supertest** - API testing
 
 ---
 
@@ -95,9 +94,78 @@ It allows users to manage tasks efficiently with features like authentication, t
 task-manager/
 │
 ├── backend/
-│   ├── models/
-│   ├── routes/
-│   ├── middleware/
+│   ├── controllers/          # Business logic controllers
+│   │   ├── authController.js
+│   │   ├── taskController.js
+│   │   ├── notificationController.js
+│   │   └── analyticsController.js
+│   ├── routes/              # API routes
+│   │   ├── auth.js
+│   │   ├── tasks.js
+│   │   ├── notifications.js
+│   │   └── analytics.js
+│   ├── models/              # Database models
+│   │   ├── User.js
+│   │   ├── Task.js
+│   │   └── Notification.js
+│   ├── middleware/          # Express middleware
+│   │   ├── auth.js
+│   │   └── validate.js
+│   ├── services/            # Business logic services
+│   ├── utils/               # Utility functions
+│   │   ├── errorHandler.js
+│   │   └── appError.js
+│   ├── config/              # Configuration files
+│   │   └── config.js
+│   └── server.js            # Express server entry point
+│
+├── frontend/
+│   ├── src/
+│   │   ├── components/       # React components
+│   │   │   ├── layout/      # Layout components
+│   │   │   │   ├── MainLayout.jsx
+│   │   │   │   ├── Sidebar.jsx
+│   │   │   │   └── Header.jsx
+│   │   │   ├── pages/       # Page components
+│   │   │   │   ├── Dashboard.jsx
+│   │   │   │   ├── AllTasks.jsx
+│   │   │   │   ├── AddTask.jsx
+│   │   │   │   ├── BinTask.jsx
+│   │   │   │   ├── Analytics.jsx
+│   │   │   │   ├── Profile.jsx
+│   │   │   │   └── Account.jsx
+│   │   │   ├── ui/          # UI components
+│   │   │   │   ├── Toast.jsx
+│   │   │   │   ├── ConfirmModal.jsx
+│   │   │   │   └── ShareModal.jsx
+│   │   │   ├── Auth.jsx     # Authentication component
+│   │   │   ├── TaskForm.jsx # Task form component
+│   │   │   ├── ProgressBar.jsx
+│   │   │   └── SearchBar.jsx
+│   │   ├── context/         # React context
+│   │   │   └── NotificationContext.jsx
+│   │   ├── services/        # API services
+│   │   │   ├── api.js
+│   │   │   └── socketService.js
+│   │   ├── hooks/           # Custom hooks
+│   │   ├── utils/           # Utility functions
+│   │   ├── styles/          # CSS styles
+│   │   ├── assets/          # Static assets
+│   │   ├── App.jsx          # Main app component
+│   │   ├── index.js         # App entry point
+│   │   └── index.css        # Global styles
+│   ├── public/              # Public assets
+│   │   ├── index.html
+│   │   ├── manifest.json
+│   │   └── robots.txt
+│   ├── package.json
+│   ├── tailwind.config.js
+│   └── postcss.config.js
+│
+├── docs/                    # Documentation
+├── tests/                   # Test files
+└── README.md
+```
 │   └── server.js
 │
 ├── frontend/
