@@ -188,7 +188,7 @@ exports.deleteUser = async (req, res, next) => {
     const { password } = req.body;
     const isPasswordCorrect = await user.comparePassword(password);
     if (!isPasswordCorrect) {
-      return next(AppError('Password is incorrect', 401));
+      return next(AppError('Password is incorrect', 400));
     }
 
     // Delete user's tasks

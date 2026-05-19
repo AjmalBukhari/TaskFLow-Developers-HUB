@@ -14,6 +14,7 @@ export default function Account({ showToast, onLogout }) {
     email: '',
     password: ''
   });
+  const [deletePassword, setDeletePassword] = useState('');
   const [loading, setLoading] = useState(false);
 
   // ================= FETCH USER =================
@@ -64,12 +65,17 @@ export default function Account({ showToast, onLogout }) {
 
   // ================= DELETE ACCOUNT =================
   const handleDelete = async () => {
+    if (!deletePassword) {
+      showToast('Please enter your current password to delete account', 'error');
+      return;
+    }
+
     if (!window.confirm('Are you sure you want to delete your account? This will permanently delete your account and all tasks.')) return;
 
     try {
       setLoading(true);
 
-      await deleteAccount({ password: form.password });
+      await deleteAccount({ password: deletePassword });
 
       showToast('Account deleted', 'error');
 
@@ -188,6 +194,18 @@ export default function Account({ showToast, onLogout }) {
         <p className="text-sm text-gray-500">
           Permanently delete your account and all your tasks.
         </p>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Current Password <span className="text-red-500">*</span>
+          </label>
+          <input
+            type="password"
+            value={deletePassword}
+            onChange={(e) => setDeletePassword(e.target.value)}
+            placeholder="Enter your current password"
+            className="w-full border p-2 rounded focus:ring-2 focus:ring-red-500"
+          />
+        </div>
         <button
           onClick={handleDelete}
           disabled={loading}
