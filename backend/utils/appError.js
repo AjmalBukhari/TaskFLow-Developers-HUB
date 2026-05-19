@@ -5,6 +5,3 @@ const AppError = (message, status = 500) => {
 };
 
 module.exports = AppError;
-
-// ================= USAGE =================
-// return next(AppError('Task not found', 404));

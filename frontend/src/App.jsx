@@ -1,85 +1,61 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
+import { useLocation } from "react-router-dom";
 import socketService, { useSocket } from "./services/socketService";
-
 import MainLayout from "./components/layout/MainLayout";
 import Auth from "./components/Auth";
 import Toast from "./components/ui/Toast";
 import { NotificationProvider } from "./context/NotificationContext";
-
 import Dashboard from "./components/pages/Dashboard";
 import AddTask from "./components/pages/AddTask";
 import BinTask from "./components/pages/BinTask";
 import ForgotPassword from "./components/pages/ForgotPassword";
-
 import Profile from "./components/pages/Profile";
 import AllTasks from "./components/pages/AllTasks";
-
 import Account from "./components/pages/Account";
 
 export default function App() {
-  // ================= AUTH =================
+  const location = useLocation();
   const [isAuth, setIsAuth] = useState(!!localStorage.getItem("token"));
-
-  // ================= NAVIGATE TO CHANGE PASSWORD =================
-  const handleNavigateChangePassword = () => {
-    setIsAuth(true);
-    // Set active menu to Account to show Change Password section
-    document.dispatchEvent(new CustomEvent('navigateAccount'));
-  };
-
-  // ================= GLOBAL SEARCH =================
   const [search, setSearch] = useState("");
-
-  // ================= TOAST =================
   const [toasts, setToasts] = useState([]);
+  const toastId = useRef(0);
 
   const showToast = (message, type = "success") => {
-    const id = Date.now();
-
+    const id = ++toastId.current;
     setToasts((prev) => [...prev, { id, message, type }]);
-
-    setTimeout(() => {
-      removeToast(id);
-    }, 3000);
+    setTimeout(() => removeToast(id), 3000);
   };
 
   const removeToast = (id) => {
     setToasts((prev) => prev.filter((t) => t.id !== id));
   };
 
-  // ================= SOCKET CONNECTION =================
   useEffect(() => {
-    if (isAuth) {
-      socketService.connect();
-    }
-
-    return () => {
-      socketService.disconnect();
-    };
+    if (isAuth) socketService.connect();
+    return () => socketService.disconnect();
   }, [isAuth]);
 
-  // Listen for real-time notifications
   useSocket('new_notification', (notification) => {
     showToast(notification.message, 'info');
   });
 
-  // Listen for task updates
   useSocket('task_updated', (task) => {
     showToast(`Task "${task.title}" updated`, 'info');
   });
 
-  // Listen for task creation
-  // useSocket('task_created', (task) => {
-  //   showToast(`Task "${task.title}" created`, 'success');
-  // });
-
-  // Listen for task deletion
   useSocket('task_deleted', (taskId) => {
     showToast('Task deleted', 'error');
   });
 
-  // ================= AUTH SCREEN =================
   if (!isAuth) {
+    if (location.pathname === "/forgot-password") {
+      return (
+        <>
+          <ForgotPassword />
+          <Toast toasts={toasts} removeToast={removeToast} />
+        </>
+      );
+    }
     return (
       <>
         <Auth onAuth={() => setIsAuth(true)} showToast={showToast} />
@@ -88,7 +64,6 @@ export default function App() {
     );
   }
 
-  // ================= MAIN APP =================
   return (
     <>
       <NotificationProvider>
@@ -96,55 +71,32 @@ export default function App() {
           {(activeMenu, setActiveMenuPage) => {
             switch (activeMenu) {
               case "Dashboard":
-                return (
-                  <Dashboard
-                    showToast={showToast}
-                    onChange={setActiveMenuPage}
-                    search={search}
-                  />
-                );
-
+                return <Dashboard showToast={showToast} onChange={setActiveMenuPage} search={search} />;
               case "All Tasks":
                 return <AllTasks showToast={showToast} />;
-
               case "Add Task":
                 return <AddTask showToast={showToast} />;
-
               case "Bin Task":
                 return <BinTask showToast={showToast} />;
-
               case "Contact Us":
                 return (
-                  <div className="bg-white p-6 rounded-xl shadow-sm">
-                    <h2 className="text-xl font-semibold mb-3">Contact Us</h2>
-                    <p className="text-sm text-gray-500">
-                      This section can include a contact form.
-                    </p>
+                  <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm dark:shadow-gray-900/50">
+                    <h2 className="text-xl font-semibold mb-3 dark:text-white">Contact Us</h2>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">This section can include a contact form.</p>
                   </div>
                 );
-
               case "Profile":
-                return <Profile showToast={showToast} />;
-
+                return <Profile showToast={showToast} onNavigate={setActiveMenuPage} />;
               case "Account":
-                return (
-                  <Account
-                    showToast={showToast}
-                    onLogout={() => setIsAuth(false)}
-                  />
-                );
-
+                return <Account showToast={showToast} onLogout={() => setIsAuth(false)} />;
               case "Forgot Password":
                 return <ForgotPassword />;
-
               default:
                 return <Dashboard showToast={showToast} search={search} />;
             }
           }}
         </MainLayout>
       </NotificationProvider>
-
-      {/* GLOBAL TOAST */}
       <Toast toasts={toasts} removeToast={removeToast} />
     </>
   );

@@ -7,6 +7,3 @@ const config = {
 };
 
 module.exports = config;
-
-// ================= USAGE =================
-// const config = require('../config/config.js');
