@@ -43,8 +43,8 @@ export const getProfile = () =>
 export const updateProfile = (data) => 
   API.put('/auth/me', data);
 
-export const deleteAccount = () =>
-  API.delete('/auth/me');
+export const deleteAccount = (data) =>
+  API.delete('/auth/me', { data });
 
 export const updatePassword = (data) =>
   API.put('/auth/me/password', data);

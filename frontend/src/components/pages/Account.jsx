@@ -111,7 +111,9 @@ export default function Account({ showToast, onLogout }) {
     if (!confirm) return;
 
     try {
-      await deleteAccount();
+      setLoading(true);
+
+      await deleteAccount({ password: form.password });
 
       showToast('Account deleted', 'error');
 
@@ -120,6 +122,8 @@ export default function Account({ showToast, onLogout }) {
 
     } catch {
       showToast('Failed to delete account', 'error');
+    } finally {
+      setLoading(false);
     }
   };
 
