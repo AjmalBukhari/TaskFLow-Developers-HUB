@@ -28,23 +28,32 @@ exports.createTask = async (req, res, next) => {
 // ================= GET ALL TASKS =================
 exports.getAllTasks = async (req, res, next) => {
   try {
-    const { search, status } = req.query;
+    const { search, status, priority } = req.query;
 
-    const filter = {
+    const baseFilter = {
       $or: [
         { user: req.user.id, isDeleted: false },
         { sharedWith: req.user.id, isDeleted: false }
       ]
     };
 
-    if (status) filter.$and = [{ status }];
+    const additionalFilters = [];
+
+    if (status) additionalFilters.push({ status });
+    if (priority) additionalFilters.push({ priority });
 
     if (search) {
-      filter.$or = [
-        { title: { $regex: search, $options: 'i' } },
-        { description: { $regex: search, $options: 'i' } }
-      ];
+      additionalFilters.push({
+        $or: [
+          { title: { $regex: search, $options: 'i' } },
+          { description: { $regex: search, $options: 'i' } }
+        ]
+      });
     }
+
+    const filter = additionalFilters.length > 0
+      ? { ...baseFilter, $and: additionalFilters }
+      : baseFilter;
 
     const tasks = await Task.find(filter).sort({ createdAt: -1 });
 

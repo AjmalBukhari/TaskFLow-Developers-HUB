@@ -42,5 +42,11 @@ export const markAllAsRead = () => API.put('/notifications/read-all');
 export const deleteNotification = (id) => API.delete(`/notifications/${id}`);
 export const getUnreadCount = () => API.get('/notifications/unread-count');
 export const permanentDeleteTask = (id) => API.delete(`/tasks/permanent/${id}`);
+export const getAnalyticsOverview = () => API.get('/analytics/overview');
+export const getAnalyticsTrends = () => API.get('/analytics/trends');
+export const uploadAttachment = (taskId, formData) => API.post(`/uploads/${taskId}/attachments`, formData, {
+  headers: { 'Content-Type': 'multipart/form-data' }
+});
+export const removeAttachment = (taskId, attachmentId) => API.delete(`/uploads/${taskId}/attachments/${attachmentId}`);
 
 export default API;

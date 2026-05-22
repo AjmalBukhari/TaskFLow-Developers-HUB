@@ -12,6 +12,7 @@ import ForgotPassword from "./components/pages/ForgotPassword";
 import Profile from "./components/pages/Profile";
 import AllTasks from "./components/pages/AllTasks";
 import Account from "./components/pages/Account";
+import Analytics from "./components/pages/Analytics";
 
 export default function App() {
   const location = useLocation();
@@ -89,6 +90,8 @@ export default function App() {
                 return <Profile showToast={showToast} onNavigate={setActiveMenuPage} />;
               case "Account":
                 return <Account showToast={showToast} onLogout={() => setIsAuth(false)} />;
+              case "Analytics":
+                return <Analytics showToast={showToast} />;
               case "Forgot Password":
                 return <ForgotPassword />;
               default:

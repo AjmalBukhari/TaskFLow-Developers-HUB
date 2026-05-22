@@ -8,6 +8,9 @@ const errorHandler = require('./utils/errorHandler');
 const taskRoutes = require('./routes/tasks');
 const authRoutes = require('./routes/auth');
 const notificationRoutes = require('./routes/notifications');
+const analyticsRoutes = require('./routes/analytics');
+const uploadRoutes = require('./routes/uploads');
+const path = require('path');
 
 const app = express();
 const server = http.createServer(app);
@@ -19,6 +22,9 @@ app.use(express.json());
 app.use('/api/tasks', taskRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/notifications', notificationRoutes);
+app.use('/api/analytics', analyticsRoutes);
+app.use('/api/uploads', uploadRoutes);
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 io.on('connection', (socket) => {
   console.log('User connected:', socket.id);
