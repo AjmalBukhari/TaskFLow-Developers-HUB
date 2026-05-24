@@ -61,7 +61,7 @@ export default function Auth({ onAuth, showToast }) {
           <input
             name="email"
             type="email"
-            placeholder="Enter Your Email"
+            placeholder="Email"
             value={form.email}
             onChange={handleChange}
             className="w-full border dark:border-gray-600 p-2 rounded focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 outline-none"
