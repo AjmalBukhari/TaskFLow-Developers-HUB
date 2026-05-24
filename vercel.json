@@ -2,9 +2,14 @@
   "version": 2,
   "builds": [
     { "src": "package.json", "use": "@vercel/static-build", "config": { "distDir": "frontend/build" } },
+    { "src": "backend/package.json", "use": "@vercel/node" },
+    { "src": "api/ping.js", "use": "@vercel/node" },
+    { "src": "api/test.js", "use": "@vercel/node" },
     { "src": "api/index.js", "use": "@vercel/node" }
   ],
   "routes": [
+    { "src": "/api/ping", "dest": "api/ping.js" },
+    { "src": "/api/test", "dest": "api/test.js" },
     { "src": "/api/(.*)", "dest": "api/index.js" },
     { "handle": "filesystem" },
     { "src": "/(.*)", "dest": "/index.html" }
