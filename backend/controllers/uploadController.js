@@ -253,6 +253,58 @@ exports.deleteUserFolder = async (userId) => {
   }
 };
 
+exports.uploadTempFile = async (req, res, next) => {
+  try {
+    if (!req.file) return next(AppError('No file uploaded', 400));
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    const ext = path.extname(req.file.originalname);
+    const storedName = uniqueSuffix + ext;
+    const storagePath = `temp/${req.user.id}/${storedName}`;
+
+    const bucket = supabase.storage.from(BUCKET_NAME);
+    const { error: uploadError } = await bucket.upload(storagePath, req.file.buffer, {
+      contentType: req.file.mimetype, upsert: false
+    });
+    if (uploadError) {
+      if (uploadError.message?.toLowerCase().includes('bucket') || uploadError.statusCode === 404) {
+        await supabase.storage.createBucket(BUCKET_NAME, { public: true }).catch(() => {});
+        const { error: retryError } = await bucket.upload(storagePath, req.file.buffer, {
+          contentType: req.file.mimetype, upsert: false
+        });
+        if (retryError) return next(AppError(retryError.message, 500));
+      } else if (uploadError.message?.toLowerCase().includes('row-level security') || uploadError.message?.includes('violates')) {
+        return next(AppError('Storage permission denied. Check SUPABASE_SERVICE_ROLE_KEY.', 500));
+      } else {
+        return next(AppError(uploadError.message, 500));
+      }
+    }
+
+    const { data: fileRecord, error: insertError } = await supabase
+      .from('uploadfiles')
+      .insert({
+        filename: req.file.originalname,
+        filepath: storagePath,
+        user_id: req.user.id,
+        task_id: null,
+        size: req.file.size
+      })
+      .select()
+      .single();
+    if (insertError) {
+      await bucket.remove([storagePath]);
+      return next(AppError(insertError.message, 400));
+    }
+
+    res.status(201).json({
+      status: 'success',
+      message: 'File uploaded',
+      data: { ...fileRecord, publicUrl: getPublicUrl(storagePath) }
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
 exports.createUserFolder = () => {};
 
 exports.upload = upload;

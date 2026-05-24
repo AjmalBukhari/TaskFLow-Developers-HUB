@@ -45,6 +45,9 @@ export const getUnreadCount = () => API.get('/notifications/unread-count');
 export const permanentDeleteTask = (id) => API.delete(`/tasks/permanent/${id}`);
 export const getAnalyticsOverview = () => API.get('/analytics/overview');
 export const getAnalyticsTrends = () => API.get('/analytics/trends');
+export const uploadTempFile = (formData) => API.post('/uploads/temp', formData, {
+  headers: { 'Content-Type': 'multipart/form-data' }
+});
 export const uploadAttachment = (taskId, formData) => API.post(`/uploads/${taskId}/attachments`, formData, {
   headers: { 'Content-Type': 'multipart/form-data' }
 });

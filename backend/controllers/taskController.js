@@ -5,12 +5,34 @@ const { copyFilesForShare } = require('./uploadController');
 
 exports.createTask = async (req, res, next) => {
   try {
+    const { attachmentIds, ...taskData } = req.body;
     const { data: task, error } = await supabase
       .from('tasks')
-      .insert({ ...req.body, user_id: req.user.id, owner: req.user.id, pinned: req.body.pinned || false })
+      .insert({ ...taskData, user_id: req.user.id, owner: req.user.id, pinned: req.body.pinned || false })
       .select()
       .single();
     if (error) return next(AppError(error.message, 400));
+
+    if (attachmentIds?.length > 0) {
+      const { data: files } = await supabase
+        .from('uploadfiles')
+        .select('id, filepath')
+        .in('id', attachmentIds);
+      if (files?.length > 0) {
+        const newPaths = files.map(f => {
+          const fileName = f.filepath.split('/').pop();
+          return { id: f.id, oldPath: f.filepath, newPath: `${req.user.id}/${fileName}` };
+        });
+        for (const p of newPaths) {
+          await supabase.storage.from('taskflow-files').move(p.oldPath, p.newPath).catch(() => {});
+          await supabase.from('uploadfiles').update({ task_id: task.id, filepath: p.newPath }).eq('id', p.id);
+        }
+        const ids = files.map(f => f.id);
+        const existing = task.attachments || [];
+        await supabase.from('tasks').update({ attachments: [...existing, ...ids] }).eq('id', task.id);
+      }
+    }
+
     getIO().to(req.user.id).emit('task_created', task);
     res.status(201).json({ status: 'success', data: task });
   } catch (err) {

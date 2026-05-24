@@ -3,6 +3,7 @@ const router = express.Router();
 const uploadController = require('../controllers/uploadController');
 const auth = require('../middleware/auth');
 
+router.post('/temp', auth, uploadController.upload.single('file'), uploadController.uploadTempFile);
 router.post('/:id/attachments', auth, uploadController.upload.single('file'), uploadController.uploadAttachment);
 router.get('/:taskId/attachments', auth, uploadController.getAttachments);
 router.get('/:taskId/attachments/:attachmentId/download', auth, uploadController.downloadAttachment);
