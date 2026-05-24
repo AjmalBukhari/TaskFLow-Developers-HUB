@@ -30,15 +30,18 @@ export default function TaskForm({ task, onClose, onSaved, showToast }) {
     if (!form.title.trim()) return showToast('Title is required', 'warning');
     try {
       setLoading(true);
-if (task) {
-         await updateTask(task.id, form);
-         showToast(`Task "${task.title}" updated`, 'info');
+      let savedTask;
+      if (task) {
+        await updateTask(task.id, form);
+        showToast(`Task "${task.title}" updated`, 'info');
+        savedTask = task;
       } else {
-        await createTask(form);
+        const res = await createTask(form);
         showToast('Task created');
         setForm(initialState);
+        savedTask = res?.data?.data;
       }
-      if (onSaved) onSaved();
+      if (onSaved) onSaved(savedTask?.id);
     } catch (err) {
       showToast(err.response?.data?.message || 'Error saving task', 'error');
     } finally {

@@ -13,24 +13,20 @@ function getPublicUrl(storagePath) {
   return `${SUPABASE_URL}/storage/v1/object/public/${BUCKET_NAME}/${storagePath}`;
 }
 
-let bucketChecked = false;
-async function ensureBucket() {
-  if (bucketChecked || !supabase) return;
-  const { data: buckets } = await supabase.storage.listBuckets();
-  if (!buckets?.find(b => b.name === BUCKET_NAME)) {
-    await supabase.storage.createBucket(BUCKET_NAME, { public: true });
-  }
-  bucketChecked = true;
-}
-
 async function uploadToStorage(userId, storedName, buffer, contentType) {
   if (!supabase) throw new Error('Supabase not configured');
-  await ensureBucket();
   const storagePath = `${userId}/${storedName}`;
-  const { error } = await supabase.storage
-    .from(BUCKET_NAME)
-    .upload(storagePath, buffer, { contentType, upsert: false });
-  if (error) throw new Error('Storage upload failed: ' + error.message);
+  const bucket = supabase.storage.from(BUCKET_NAME);
+  const { error } = await bucket.upload(storagePath, buffer, { contentType, upsert: false });
+  if (error) {
+    if (error.message?.toLowerCase().includes('bucket') || error.statusCode === 404) {
+      await supabase.storage.createBucket(BUCKET_NAME, { public: true }).catch(() => {});
+      const { error: retryError } = await bucket.upload(storagePath, buffer, { contentType, upsert: false });
+      if (retryError) throw new Error(retryError.message);
+    } else {
+      throw new Error(error.message);
+    }
+  }
   return storagePath;
 }
 
@@ -66,7 +62,8 @@ exports.uploadAttachment = async (req, res, next) => {
     try {
       storagePath = await uploadToStorage(req.user.id, storedName, req.file.buffer, req.file.mimetype);
     } catch (err) {
-      return next(AppError('Failed to upload file to storage', 500));
+      console.error('Upload to storage failed:', err.message);
+      return next(AppError(err.message, 500));
     }
 
     const { data: fileRecord, error: insertError } = await supabase
