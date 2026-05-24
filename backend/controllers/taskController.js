@@ -164,6 +164,20 @@ exports.permanentDelete = async (req, res, next) => {
       .eq('isDeleted', true)
       .single();
     if (error || !task) return next(AppError('Task not found', 404));
+
+    const attachmentIds = task.attachments || [];
+    if (attachmentIds.length > 0) {
+      const { data: files } = await supabase
+        .from('uploadfiles')
+        .select('*')
+        .in('id', attachmentIds);
+      if (files?.length > 0) {
+        const paths = files.map(f => f.filepath);
+        await supabase.storage.from('taskflow-files').remove(paths).catch(() => {});
+        await supabase.from('uploadfiles').delete().in('id', attachmentIds);
+      }
+    }
+
     await supabase.from('notifications').delete().eq('taskId', req.params.id);
     const { error: deleteError } = await supabase
       .from('tasks')
