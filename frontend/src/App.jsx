@@ -45,6 +45,9 @@ export default function App() {
     showToast(`Task "${task.title}" updated`, 'info');
   });
 
+  // useSocket('task_deleted', (taskId) => {
+  //   showToast('Task deleted', 'error');
+  // });
 
   if (!isAuth) {
     if (location.pathname === "/forgot-password") {
