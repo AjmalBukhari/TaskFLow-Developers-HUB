@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API = axios.create({ baseURL: process.env.NODE_ENV === 'production' ? '/api' : 'taskflow-developerhub-final100.vercel.app/api' });
+const API = axios.create({ baseURL: process.env.NODE_ENV === 'production' ? '/api' : 'http://localhost:5000/api' });
 
 API.interceptors.request.use((req) => {
   const token = localStorage.getItem('token');
@@ -49,5 +49,17 @@ export const uploadAttachment = (taskId, formData) => API.post(`/uploads/${taskI
   headers: { 'Content-Type': 'multipart/form-data' }
 });
 export const removeAttachment = (taskId, attachmentId) => API.delete(`/uploads/${taskId}/attachments/${attachmentId}`);
+const getBaseUrl = () => {
+  const base = API.defaults.baseURL;
+  return base.endsWith('/api') ? base.replace('/api', '') : base;
+};
+export const downloadAttachment = (taskId, attachmentId) => {
+  const token = localStorage.getItem('token');
+  return `${getBaseUrl()}/uploads/${taskId}/attachments/${attachmentId}/download?token=${token}`;
+};
+export const previewAttachment = (taskId, attachmentId) => {
+  const token = localStorage.getItem('token');
+  return `${getBaseUrl()}/uploads/${taskId}/attachments/${attachmentId}/preview?token=${token}`;
+};
 
 export default API;

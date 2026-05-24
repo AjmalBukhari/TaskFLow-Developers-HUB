@@ -1,17 +1,17 @@
 # TaskFlow - Full Stack Task Management System
 
-A modern, full-featured task management application built with **React, Node.js, Express, and Supabase (PostgreSQL)**. Features JWT authentication, real-time collaboration, analytics dashboard, dark mode, file attachments, and more.
+A modern, full-featured task management application built with **React 19, Node.js, Express 4, and Supabase (PostgreSQL)**. Features JWT authentication, real-time collaboration, analytics dashboard, dark mode, file attachments, and more.
 
 ---
 
-## Phase 1: Core Task Management (Weeks 1–3)
+## Phase 1: Core Task Management
 
 > **Objective:** Build a complete task management system with CRUD operations, authentication, search/filter, and progress tracking.
 
-### Week 1 — Backend Development
+### Backend Development
 
 **Tech Stack:**
-- **Runtime:** Node.js with Express.js
+- **Runtime:** Node.js with Express 4
 - **Database:** Supabase (PostgreSQL)
 - **Authentication:** JWT + bcryptjs
 - **Validation:** express-validator
@@ -41,7 +41,7 @@ A modern, full-featured task management application built with **React, Node.js,
 
 **Error Handling:** Graceful error responses with proper HTTP status codes across all endpoints.
 
-### Week 2 — Frontend Development
+### Frontend Development
 
 **Tech Stack:**
 - **UI Library:** React 19
@@ -64,7 +64,7 @@ A modern, full-featured task management application built with **React, Node.js,
 - Mobile-first approach using Tailwind CSS
 - Works seamlessly on desktop, tablet, and mobile
 
-### Week 3 — Advanced Features & Polish
+### Advanced Features & Polish
 
 **Authentication System:**
 - **Register/Login** — JWT-based with bcrypt password hashing
@@ -91,22 +91,17 @@ A modern, full-featured task management application built with **React, Node.js,
 
 ---
 
-## Phase 2: Feature Expansion, Analytics & Deployment (Weeks 4–6)
+## Phase 2: Feature Expansion, Analytics & Deployment
 
 > **Objective:** Add collaborative features, analytics dashboard, deployment, and final polish.
 
-### Week 4 — Collaborative Features & Real-Time Notifications
+### Collaborative Features & Real-Time Notifications
 
 **User Collaboration (Task Sharing):**
 - **Share by Copy** — When a task is shared, a new independent copy is created for the recipient
 - Each user owns their copy — can edit, delete, and manage independently
 - Original owner's task remains unchanged
 - Duplicate sharing detection prevents multiple copies
-
-**Schema Updates:**
-| Column | Type | Description |
-|--------|------|-------------|
-| owner | UUID | Copy owner (same as user_id for sharing) |
 
 **API Endpoints:**
 | Method | Endpoint | Description |
@@ -125,11 +120,7 @@ A modern, full-featured task management application built with **React, Node.js,
 - **Notifications page** — Full history with mark-as-read and clear-all
 - **Real-time toast** — Popup notifications for incoming events
 
-**Authorization:**
-- Only task owner can share/update/delete their tasks
-- Invalid sharing attempts handled with descriptive error messages
-
-### Week 5 — Advanced Analytics & Reporting
+### Advanced Analytics & Reporting
 
 **Analytics Dashboard:**
 - **Overview Stats:** Total, completed, pending, in-progress, high priority, overdue, due today, shared tasks, completion rate
@@ -148,11 +139,11 @@ A modern, full-featured task management application built with **React, Node.js,
 - Dark mode compatible chart themes
 - Responsive containers adapting to screen size
 
-### Week 6 — Deployment, Documentation & Final Enhancements
+### Deployment & Final Enhancements
 
 **Deployment (Vercel):**
 - **Frontend:** Static build deployed via Vercel
-- **Backend:** Express server deployed as Vercel serverless function
+- **Backend:** Express 4 server deployed as Vercel serverless function
 - **Single URL:** Frontend serves on root, API routes under `/api/*`
 - **Environment Variables:** Configured in Vercel dashboard
 
@@ -177,7 +168,6 @@ npm start
 | SUPABASE_SERVICE_ROLE_KEY | Supabase service role key | Yes |
 | JWT_SECRET | Secret for signing JWT tokens | Yes |
 | PORT | Server port (default: 5000) | No |
-| CORS_ORIGIN | Allowed CORS origin | No |
 
 **Dark Mode:**
 - Toggle between light and dark themes
@@ -188,7 +178,7 @@ npm start
 **File Attachments:**
 - Upload images, PDFs, documents (jpeg, jpg, png, gif, pdf, doc, docx, xls, xlsx, txt, zip)
 - 10MB file size limit
-- View and remove attachments from tasks
+- Uses multer memory storage for Vercel compatibility
 
 **Mobile Responsiveness:**
 - All pages tested and optimized for mobile
@@ -206,7 +196,6 @@ npm start
 | GET | `/api/auth/me` | Get current profile | Yes |
 | PUT | `/api/auth/me` | Update profile (name, email, password) | Yes |
 | PUT | `/api/auth/me/password` | Update password with current verification | Yes |
-| POST | `/api/auth/forgot-password` | Reset password by email | No |
 | DELETE | `/api/auth/me` | Delete account (with password confirmation) | Yes |
 
 ### Tasks
@@ -286,16 +275,10 @@ task-manager/
 ├── backend/
 │   ├── config/              # Supabase client and app config
 │   ├── controllers/         # Route handlers
-│   │   ├── analyticsController.js
-│   │   ├── authController.js
-│   │   ├── notificationController.js
-│   │   ├── taskController.js
-│   │   └── uploadController.js
 │   ├── middleware/          # JWT auth and validation middleware
 │   ├── routes/              # Express route definitions
 │   ├── services/            # Socket.IO initialization
 │   ├── utils/               # Error handling utilities
-│   ├── uploads/             # File storage directory
 │   ├── .env                 # Environment variables
 │   ├── package.json
 │   └── server.js            # Entry point
@@ -305,8 +288,7 @@ task-manager/
 │   │   ├── components/
 │   │   │   ├── layout/      # Header, Sidebar, MainLayout
 │   │   │   ├── pages/       # Dashboard, AllTasks, AddTask, BinTask,
-│   │   │   │                # Analytics, Account, Profile, Notifications,
-│   │   │   │                # ForgotPassword
+│   │   │   │                # Analytics, Account, Profile, Notifications
 │   │   │   └── ui/          # Toast, ConfirmModal, ShareModal
 │   │   ├── context/         # ThemeContext, NotificationContext
 │   │   ├── services/        # api.js (Axios), socketService.js
@@ -332,7 +314,6 @@ task-manager/
 3. Supabase project (supabase.com)
 
 ### Steps
-
 1. **Push code to GitHub:**
    ```bash
    git add .
@@ -359,7 +340,7 @@ task-manager/
 
 ### Limitations (Graceful Degradation on Serverless)
 - **Socket.IO** — Real-time notifications won't work on Vercel's serverless infrastructure (no persistent WebSocket connections). Falls back silently.
-- **File Uploads** — Uploaded files won't persist on Vercel's ephemeral filesystem.
+- **File Uploads** — Uses multer memory storage (no disk writes) to avoid read-only filesystem errors. File data persists only in memory for the request lifecycle.
 - **Everything else** (CRUD, auth, analytics, sharing) works normally.
 
 ### Local Development
@@ -394,13 +375,12 @@ npm start          # Runs on http://localhost:3000
 
 ## Links
 
-- **GitHub Repository:** [ADD LINK HERE]
-- **Live Deployment:** [ADD LINK HERE]
-- **Video Walkthrough:** [ADD LINK HERE]
+- **GitHub Repository:** https://github.com/AjmalBukhari/taskflow-developerhub-final100
+- **Live Deployment:** https://taskflow-developerhub-final100.vercel.app
 
 ---
 
-## Final Submission Details
+## Deliverables
 
 - **Phase 1 Deadline:** 28 April, 2026
 - **Phase 2 Deadline:** 25 May, 2026 — 11:59 PM PKT

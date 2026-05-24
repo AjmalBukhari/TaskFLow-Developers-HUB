@@ -5,6 +5,7 @@ import SearchBar from "../SearchBar";
 import TaskForm from "../TaskForm";
 import ConfirmModal from "../ui/ConfirmModal";
 import ShareModal from "../ui/ShareModal";
+import FileUpload from "../ui/FileUpload";
 
 export default function AllTasks({ showToast }) {
   const [tasks, setTasks] = useState([]);
@@ -17,6 +18,7 @@ export default function AllTasks({ showToast }) {
     isOpen: false, type: "default", title: "", message: "", onConfirm: () => {}
   });
   const [shareModal, setShareModal] = useState({ isOpen: false, taskId: null });
+  const [expandedFile, setExpandedFile] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
   const tasksPerPage = 7;
 
@@ -96,33 +98,48 @@ export default function AllTasks({ showToast }) {
                 onChange={selectAll} /> Select Page
             </div>
             {currentTasks.map((task) => (
-              <motion.div key={task.id} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}
-                className={`flex justify-between items-center border dark:border-gray-700 p-3 rounded-lg ${task.pinned ? "bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-700" : ""}`}>
-                <div className="flex items-start gap-3">
-                  <input type="checkbox" checked={selected.includes(task.id)} onChange={() => toggleSelect(task.id)} />
-                  <div className="flex flex-col">
-                    <div className="flex items-center gap-2">
-                      {task.pinned && <span className="text-yellow-500">📌</span>}
-                      <h4 onClick={() => setEditingTask(task)}
-                        className={`font-medium dark:text-gray-100 ${task.pinned ? "text-indigo-600 dark:text-indigo-400" : ""}`}>{task.title}</h4>
+              <div key={task.id}>
+                <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}
+                  className={`flex justify-between items-center border dark:border-gray-700 p-3 rounded-lg ${task.pinned ? "bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-700" : ""}`}>
+                  <div className="flex items-start gap-3">
+                    <input type="checkbox" checked={selected.includes(task.id)} onChange={() => toggleSelect(task.id)} />
+                    <div className="flex flex-col">
+                      <div className="flex items-center gap-2">
+                        {task.pinned && <span className="text-yellow-500">📌</span>}
+                        <h4 onClick={() => setEditingTask(task)}
+                          className={`font-medium dark:text-gray-100 ${task.pinned ? "text-indigo-600 dark:text-indigo-400" : ""}`}>{task.title}</h4>
+                      </div>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">{task.description}</p>
                     </div>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">{task.description}</p>
                   </div>
-                </div>
-                <div className="flex items-center gap-3">
-                  <span className={`text-xs px-2 py-1 rounded-full ${
-                    task.status === "Completed"
-                      ? "bg-green-100 dark:bg-green-900/50 text-green-700 dark:text-green-400"
-                      : task.status === "In Progress"
-                      ? "bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-400"
-                      : "bg-yellow-100 dark:bg-yellow-900/50 text-yellow-700 dark:text-yellow-400"
-                  }`}>{task.status}</span>
-                  <button onClick={() => setEditingTask(task)} className="text-blue-500 dark:text-blue-400 text-sm">Edit</button>
-                  <button onClick={() => setShareModal({ isOpen: true, taskId: task.id })}
-                    className="text-green-500 dark:text-green-400 text-sm">Share</button>
-                  <button onClick={() => handleDelete(task.id)} className="text-red-500 dark:text-red-400 text-sm">Delete</button>
-                </div>
-              </motion.div>
+                  <div className="flex items-center gap-3">
+                    <span className={`text-xs px-2 py-1 rounded-full ${
+                      task.status === "Completed"
+                        ? "bg-green-100 dark:bg-green-900/50 text-green-700 dark:text-green-400"
+                        : task.status === "In Progress"
+                        ? "bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-400"
+                        : "bg-yellow-100 dark:bg-yellow-900/50 text-yellow-700 dark:text-yellow-400"
+                    }`}>{task.status}</span>
+                    <button onClick={() => setExpandedFile(expandedFile === task.id ? null : task.id)}
+                      className={`text-sm ${expandedFile === task.id ? "text-indigo-600 dark:text-indigo-400" : "text-gray-500 dark:text-gray-400"}`}>
+                      Files ({task.attachments?.length || 0})
+                    </button>
+                    <button onClick={() => setEditingTask(task)} className="text-blue-500 dark:text-blue-400 text-sm">Edit</button>
+                    <button onClick={() => setShareModal({ isOpen: true, taskId: task.id })}
+                      className="text-green-500 dark:text-green-400 text-sm">Share</button>
+                    <button onClick={() => handleDelete(task.id)} className="text-red-500 dark:text-red-400 text-sm">Delete</button>
+                  </div>
+                </motion.div>
+                {expandedFile === task.id && (
+                  <div className="border-x border-b dark:border-gray-700 rounded-b-lg px-3 pb-3 -mt-1">
+                    <FileUpload taskId={task.id} attachments={task.attachments || []}
+                      onUpdate={(files) => {
+                        const updated = tasks.map(t => t.id === task.id ? { ...t, attachments: files } : t);
+                        setTasks(updated);
+                      }} showToast={showToast} />
+                  </div>
+                )}
+              </div>
             ))}
             <div className="flex justify-between items-center mt-4">
               <button disabled={currentPage === 1} onClick={() => setCurrentPage((p) => p - 1)}

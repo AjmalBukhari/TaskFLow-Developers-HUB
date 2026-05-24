@@ -2,6 +2,7 @@ const supabase = require('../config/supabase');
 const AppError = require('../utils/appError');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
+const { createUserFolder, deleteUserFolder } = require('./uploadController');
 
 const generateToken = (userId) => {
   return jwt.sign({ id: userId }, process.env.JWT_SECRET, {
@@ -19,6 +20,7 @@ exports.register = async (req, res, next) => {
       .select()
       .single();
     if (error) return next(AppError(error.message, 400));
+    createUserFolder(data.id);
     const token = generateToken(data.id);
     res.status(201).json({ status: 'success', token, data: { user: data } });
   } catch (err) {
@@ -135,6 +137,7 @@ exports.deleteUser = async (req, res, next) => {
     if (!isPasswordCorrect) return next(AppError('Password is incorrect', 400));
     await supabase.from('notifications').delete().eq('recipient', req.user.id);
     await supabase.from('tasks').delete().eq('user_id', req.user.id);
+    deleteUserFolder(req.user.id);
     await supabase.from('users').delete().eq('id', req.user.id);
     res.json({ status: 'success', message: 'User deleted successfully' });
   } catch (err) {

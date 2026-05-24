@@ -1,6 +1,7 @@
 const supabase = require('../config/supabase');
 const AppError = require('../utils/appError');
 const { getIO } = require('../services/socket');
+const { copyFilesForShare } = require('./uploadController');
 
 exports.createTask = async (req, res, next) => {
   try {
@@ -181,18 +182,22 @@ exports.shareTask = async (req, res, next) => {
     const alreadyShared = existingCopies?.map(c => c.user_id) || [];
     const newUsers = users.filter(u => !alreadyShared.includes(u.id));
     if (newUsers.length === 0) return next(AppError('Task already shared with all specified users', 400));
-    const newTasks = newUsers.map(u => ({
-      title: task.title,
-      description: task.description,
-      status: task.status,
-      priority: task.priority,
-      dueDate: task.dueDate,
-      user_id: u.id,
-      owner: u.id,
-      attachments: task.attachments,
-      pinned: false,
-      isDeleted: false
-    }));
+    const newTasks = [];
+    for (const u of newUsers) {
+      const copiedAttachments = await copyFilesForShare(task, u.id);
+      newTasks.push({
+        title: task.title,
+        description: task.description,
+        status: task.status,
+        priority: task.priority,
+        dueDate: task.dueDate,
+        user_id: u.id,
+        owner: u.id,
+        attachments: copiedAttachments,
+        pinned: false,
+        isDeleted: false
+      });
+    }
     const { data: createdTasks, error: insertError } = await supabase
       .from('tasks')
       .insert(newTasks)
