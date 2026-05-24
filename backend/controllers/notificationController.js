@@ -1,102 +1,87 @@
-const User = require('../models/User');
-const Notification = require('../models/Notification');
+const supabase = require('../config/supabase');
 const AppError = require('../utils/appError');
 
-// ================= GET NOTIFICATIONS =================
 exports.getNotifications = async (req, res, next) => {
   try {
-    const notifications = await Notification.find({
-      recipient: req.user.id
-    })
-    .sort({ createdAt: -1 })
-    .limit(50)
-    .populate('taskId', 'title');
-
-    res.json({
-      status: 'success',
-      results: notifications.length,
-      data: notifications
-    });
+    const { data: notifications, error } = await supabase
+      .from('notifications')
+      .select('*')
+      .eq('recipient', req.user.id)
+      .order('createdAt', { ascending: false })
+      .limit(50);
+    if (error) return next(AppError(error.message, 400));
+    res.json({ status: 'success', results: notifications.length, data: notifications });
   } catch (err) {
     next(err);
   }
 };
 
-// ================= MARK AS READ =================
 exports.markAsRead = async (req, res, next) => {
   try {
-    const notification = await Notification.findOneAndUpdate(
-      {
-        _id: req.params.id,
-        recipient: req.user.id
-      },
-      { read: true },
-      { new: true }
-    );
-
-    if (!notification) {
-      return next(AppError('Notification not found', 404));
-    }
-
-    res.json({
-      status: 'success',
-      data: notification
-    });
+    const { data: notification, error } = await supabase
+      .from('notifications')
+      .update({ read: true })
+      .eq('id', req.params.id)
+      .eq('recipient', req.user.id)
+      .select()
+      .single();
+    if (error || !notification) return next(AppError('Notification not found', 404));
+    res.json({ status: 'success', data: notification });
   } catch (err) {
     next(err);
   }
 };
 
-// ================= MARK ALL AS READ =================
 exports.markAllAsRead = async (req, res, next) => {
   try {
-    const result = await Notification.updateMany(
-      { recipient: req.user.id, read: false },
-      { read: true }
-    );
-
-    res.json({
-      status: 'success',
-      message: `${result.modifiedCount} notifications marked as read`
-    });
+    const { error } = await supabase
+      .from('notifications')
+      .update({ read: true })
+      .eq('recipient', req.user.id)
+      .eq('read', false);
+    if (error) return next(AppError(error.message, 400));
+    res.json({ status: 'success', message: 'Notifications marked as read' });
   } catch (err) {
     next(err);
   }
 };
 
-// ================= DELETE NOTIFICATION =================
 exports.deleteNotification = async (req, res, next) => {
   try {
-    const notification = await Notification.findOneAndDelete({
-      _id: req.params.id,
-      recipient: req.user.id
-    });
-
-    if (!notification) {
-      return next(AppError('Notification not found', 404));
-    }
-
-    res.json({
-      status: 'success',
-      message: 'Notification deleted'
-    });
+    const { error } = await supabase
+      .from('notifications')
+      .delete()
+      .eq('id', req.params.id)
+      .eq('recipient', req.user.id);
+    if (error) return next(AppError(error.message, 400));
+    res.json({ status: 'success', message: 'Notification deleted' });
   } catch (err) {
     next(err);
   }
 };
 
-// ================= GET UNREAD COUNT =================
+exports.clearAll = async (req, res, next) => {
+  try {
+    const { error } = await supabase
+      .from('notifications')
+      .delete()
+      .eq('recipient', req.user.id);
+    if (error) return next(AppError(error.message, 400));
+    res.json({ status: 'success', message: 'Notifications cleared' });
+  } catch (err) {
+    next(err);
+  }
+};
+
 exports.getUnreadCount = async (req, res, next) => {
   try {
-    const count = await Notification.countDocuments({
-      recipient: req.user.id,
-      read: false
-    });
-
-    res.json({
-      status: 'success',
-      data: { unreadCount: count }
-    });
+    const { data, error, count } = await supabase
+      .from('notifications')
+      .select('*', { count: 'exact' })
+      .eq('recipient', req.user.id)
+      .eq('read', false);
+    if (error) return next(AppError(error.message, 400));
+    res.json({ status: 'success', data: { unreadCount: count || 0 } });
   } catch (err) {
     next(err);
   }

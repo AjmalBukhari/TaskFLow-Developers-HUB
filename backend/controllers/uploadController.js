@@ -1,7 +1,7 @@
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
-const Task = require('../models/Task');
+const supabase = require('../config/supabase');
 const AppError = require('../utils/appError');
 
 const uploadDir = path.join(__dirname, '..', 'uploads');
@@ -10,9 +10,7 @@ if (!fs.existsSync(uploadDir)) {
 }
 
 const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, uploadDir);
-  },
+  destination: (req, file, cb) => cb(null, uploadDir),
   filename: (req, file, cb) => {
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
     cb(null, uniqueSuffix + path.extname(file.originalname));
@@ -23,53 +21,31 @@ const fileFilter = (req, file, cb) => {
   const allowedTypes = /jpeg|jpg|png|gif|pdf|doc|docx|xls|xlsx|txt|zip/;
   const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
   const mimetype = allowedTypes.test(file.mimetype);
-
-  if (mimetype && extname) {
-    cb(null, true);
-  } else {
-    cb(new AppError('Invalid file type. Allowed: images, PDF, documents, spreadsheets, text, zip', 400));
-  }
+  if (mimetype && extname) cb(null, true);
+  else cb(new AppError('Invalid file type', 400));
 };
 
-const upload = multer({
-  storage,
-  fileFilter,
-  limits: { fileSize: 10 * 1024 * 1024 }
-});
+const upload = multer({ storage, fileFilter, limits: { fileSize: 10 * 1024 * 1024 } });
 
 exports.uploadAttachment = async (req, res, next) => {
   try {
-    const task = await Task.findOne({
-      _id: req.params.id,
-      $or: [
-        { user: req.user.id },
-        { sharedWith: req.user.id }
-      ],
-      isDeleted: false
-    });
-
-    if (!task) {
-      return next(AppError('Task not found or access denied', 404));
-    }
-
-    if (!req.file) {
-      return next(AppError('No file uploaded', 400));
-    }
-
+    const { data: task, error } = await supabase
+      .from('tasks')
+      .select('*')
+      .eq('id', req.params.id)
+      .or(`user_id.eq.${req.user.id}`)
+      .eq('isDeleted', false)
+      .single();
+    if (error || !task) return next(AppError('Task not found or access denied', 404));
+    if (!req.file) return next(AppError('No file uploaded', 400));
     const attachment = {
       filename: req.file.originalname,
       fileUrl: `/api/uploads/${req.file.filename}`,
-      uploadedAt: new Date()
+      uploadedAt: new Date().toISOString()
     };
-
-    task.attachments.push(attachment);
-    await task.save();
-
-    res.json({
-      status: 'success',
-      message: 'File uploaded successfully',
-      data: attachment
-    });
+    const attachments = [...(task.attachments || []), attachment];
+    await supabase.from('tasks').update({ attachments }).eq('id', req.params.id);
+    res.json({ status: 'success', message: 'File uploaded', data: attachment });
   } catch (err) {
     next(err);
   }
@@ -77,35 +53,17 @@ exports.uploadAttachment = async (req, res, next) => {
 
 exports.removeAttachment = async (req, res, next) => {
   try {
-    const { attachmentId } = req.params;
-
-    const task = await Task.findOne({
-      _id: req.params.taskId,
-      user: req.user.id,
-      isDeleted: false
-    });
-
-    if (!task) {
-      return next(AppError('Task not found or access denied', 404));
-    }
-
-    const attachment = task.attachments.id(attachmentId);
-    if (!attachment) {
-      return next(AppError('Attachment not found', 404));
-    }
-
-    const filePath = path.join(uploadDir, path.basename(attachment.fileUrl));
-    if (fs.existsSync(filePath)) {
-      fs.unlinkSync(filePath);
-    }
-
-    task.attachments.pull(attachmentId);
-    await task.save();
-
-    res.json({
-      status: 'success',
-      message: 'Attachment removed successfully'
-    });
+    const { data: task, error } = await supabase
+      .from('tasks')
+      .select('*')
+      .eq('id', req.params.taskId)
+      .eq('user_id', req.user.id)
+      .eq('isDeleted', false)
+      .single();
+    if (error || !task) return next(AppError('Task not found or access denied', 404));
+    const attachments = (task.attachments || []).filter(a => a.fileUrl !== `/api/uploads/${req.params.attachmentId}`);
+    await supabase.from('tasks').update({ attachments }).eq('id', req.params.taskId);
+    res.json({ status: 'success', message: 'Attachment removed' });
   } catch (err) {
     next(err);
   }

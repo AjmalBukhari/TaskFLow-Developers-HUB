@@ -30,9 +30,9 @@ export default function TaskForm({ task, onClose, onSaved, showToast }) {
     if (!form.title.trim()) return showToast('Title is required', 'warning');
     try {
       setLoading(true);
-      if (task) {
-        await updateTask(task._id, form);
-        showToast('Task updated');
+if (task) {
+         await updateTask(task.id, form);
+         showToast('Task updated');
       } else {
         await createTask(form);
         showToast('Task created');

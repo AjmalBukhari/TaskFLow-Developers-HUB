@@ -13,6 +13,8 @@ import Profile from "./components/pages/Profile";
 import AllTasks from "./components/pages/AllTasks";
 import Account from "./components/pages/Account";
 import Analytics from "./components/pages/Analytics";
+import Notifications from "./components/pages/Notifications";
+import { supabase } from "./utils/supabase";
 
 export default function App() {
   const location = useLocation();
@@ -92,6 +94,8 @@ export default function App() {
                 return <Account showToast={showToast} onLogout={() => setIsAuth(false)} />;
               case "Analytics":
                 return <Analytics showToast={showToast} />;
+              case "Notifications":
+                return <Notifications showToast={showToast} />;
               case "Forgot Password":
                 return <ForgotPassword />;
               default:

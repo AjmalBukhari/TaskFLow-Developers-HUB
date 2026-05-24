@@ -41,7 +41,7 @@ export default function AllTasks({ showToast }) {
 
   const selectAll = () => {
     if (selected.length === currentTasks.length) setSelected([]);
-    else setSelected(currentTasks.map((t) => t._id));
+    else setSelected(currentTasks.map((t) => t.id));
   };
 
   const handleDelete = (id) => {
@@ -96,15 +96,15 @@ export default function AllTasks({ showToast }) {
                 onChange={selectAll} /> Select Page
             </div>
             {currentTasks.map((task) => (
-              <motion.div key={task._id} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}
+              <motion.div key={task.id} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}
                 className={`flex justify-between items-center border dark:border-gray-700 p-3 rounded-lg ${task.pinned ? "bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-700" : ""}`}>
                 <div className="flex items-start gap-3">
-                  <input type="checkbox" checked={selected.includes(task._id)} onChange={() => toggleSelect(task._id)} />
+                  <input type="checkbox" checked={selected.includes(task.id)} onChange={() => toggleSelect(task.id)} />
                   <div className="flex flex-col">
                     <div className="flex items-center gap-2">
                       {task.pinned && <span className="text-yellow-500">📌</span>}
                       <h4 onClick={() => setEditingTask(task)}
-                        className={`font-medium ${task.pinned ? "text-indigo-600 dark:text-indigo-400" : ""}`}>{task.title}</h4>
+                        className={`font-medium dark:text-gray-100 ${task.pinned ? "text-indigo-600 dark:text-indigo-400" : ""}`}>{task.title}</h4>
                     </div>
                     <p className="text-xs text-gray-500 dark:text-gray-400">{task.description}</p>
                   </div>
@@ -118,9 +118,9 @@ export default function AllTasks({ showToast }) {
                       : "bg-yellow-100 dark:bg-yellow-900/50 text-yellow-700 dark:text-yellow-400"
                   }`}>{task.status}</span>
                   <button onClick={() => setEditingTask(task)} className="text-blue-500 dark:text-blue-400 text-sm">Edit</button>
-                  <button onClick={() => setShareModal({ isOpen: true, taskId: task._id })}
+                  <button onClick={() => setShareModal({ isOpen: true, taskId: task.id })}
                     className="text-green-500 dark:text-green-400 text-sm">Share</button>
-                  <button onClick={() => handleDelete(task._id)} className="text-red-500 dark:text-red-400 text-sm">Delete</button>
+                  <button onClick={() => handleDelete(task.id)} className="text-red-500 dark:text-red-400 text-sm">Delete</button>
                 </div>
               </motion.div>
             ))}

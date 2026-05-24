@@ -54,15 +54,15 @@ export default function Dashboard({ showToast, onChange }) {
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm dark:shadow-gray-900/50 p-4">
         <h2 className="text-lg font-semibold dark:text-gray-100 mb-3">Recent Tasks</h2>
         {tasks.slice(0, 5).map((task) => (
-          <div key={task._id} className="border dark:border-gray-700 p-3 rounded-lg flex justify-between">
+          <div key={task.id} className="border dark:border-gray-700 p-3 rounded-lg flex justify-between">
             <div>
-              <h4 className="font-medium">{task.title}</h4>
+              <h4 className="font-medium dark:text-gray-100">{task.title}</h4>
               <p className="text-xs text-gray-500 dark:text-gray-400">{task.description}</p>
             </div>
             <span className="text-xs text-gray-500 dark:text-gray-400">{task.status}</span>
           </div>
         ))}
-        <button onClick={() => onChange('All Tasks')} className="border px-3 py-2 rounded m-3 hover:bg-gray-100 dark:hover:bg-gray-700 transition dark:text-gray-200">See All Tasks</button>
+        <button onClick={() => onChange('All Tasks')} className="border dark:border-gray-700 px-3 py-2 rounded m-3 hover:bg-gray-100 dark:hover:bg-gray-700 transition dark:text-gray-200">See All Tasks</button>
       </div>
     </motion.div>
   );

@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { getAnalyticsOverview, getAnalyticsTrends } from "../../services/api";
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend, BarChart, Bar, XAxis, YAxis, CartesianGrid } from "recharts";
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend, BarChart, Bar, XAxis, YAxis, CartesianGrid, Sector } from "recharts";
+import { useTheme } from "../../context/ThemeContext";
 
 const COLORS = {
   status: { Pending: '#F59E0B', 'In Progress': '#3B82F6', Completed: '#10B981' },
@@ -9,9 +10,39 @@ const COLORS = {
 };
 
 export default function Analytics({ showToast }) {
+  const { dark } = useTheme();
   const [overview, setOverview] = useState(null);
   const [trends, setTrends] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [activeIndex, setActiveIndex] = useState(0);
+
+  const textColor = dark ? '#F3F4F6' : '#111827';
+  const mutedColor = dark ? '#9CA3AF' : '#6B7280';
+
+  const renderActiveShape = useCallback((props) => {
+    const RADIAN = Math.PI / 180;
+    const { cx, cy, midAngle, innerRadius, outerRadius, startAngle, endAngle, fill, payload, percent, value } = props;
+    const sin = Math.sin(-RADIAN * midAngle);
+    const cos = Math.cos(-RADIAN * midAngle);
+    const sx = cx + (outerRadius + 10) * cos;
+    const sy = cy + (outerRadius + 10) * sin;
+    const mx = cx + (outerRadius + 30) * cos;
+    const my = cy + (outerRadius + 30) * sin;
+    const ex = mx + (cos >= 0 ? 1 : -1) * 22;
+    const ey = my;
+    const textAnchor = cos >= 0 ? 'start' : 'end';
+
+    return (
+      <g>
+        <Sector cx={cx} cy={cy} innerRadius={innerRadius} outerRadius={outerRadius + 8} startAngle={startAngle} endAngle={endAngle} fill={fill} />
+        <path d={`M${sx},${sy}L${mx},${my}L${ex},${ey}`} stroke={fill} fill="none" strokeWidth={2} />
+        <circle cx={ex} cy={ey} r={3} fill={fill} />
+        <text x={ex + (cos >= 0 ? 1 : -1) * 12} y={ey - 12} textAnchor={textAnchor} fill={textColor} fontSize={13} fontWeight={600}>{payload.name}</text>
+        <text x={ex + (cos >= 0 ? 1 : -1) * 12} y={ey + 6} textAnchor={textAnchor} fill={mutedColor} fontSize={12}>{value} tasks</text>
+        <text x={ex + (cos >= 0 ? 1 : -1) * 12} y={ey + 22} textAnchor={textAnchor} fill={mutedColor} fontSize={12}>{`${(percent * 100).toFixed(1)}%`}</text>
+      </g>
+    );
+  }, [textColor, mutedColor]);
 
   const fetchData = useCallback(async () => {
     try {
@@ -31,32 +62,27 @@ export default function Analytics({ showToast }) {
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
+  const onPieEnter = useCallback((_, index) => setActiveIndex(index), []);
+  const onPieLeave = useCallback(() => setActiveIndex(null), []);
+
   if (loading) return <p className="text-gray-500 dark:text-gray-400">Loading analytics...</p>;
   if (!overview) return <p className="text-gray-500 dark:text-gray-400">No data available</p>;
 
-  const statusData = trends?.statusDistribution?.map(s => ({
-    name: s._id,
-    value: s.count,
-    fill: COLORS.status[s._id] || '#6B7280'
-  })) || [];
+  const statusData = [{ name: 'Completed', value: overview.completedTasks, fill: '#10B981' },
+    { name: 'Pending', value: overview.pendingTasks, fill: '#F59E0B' },
+    { name: 'In Progress', value: overview.inProgressTasks, fill: '#3B82F6' }].filter(s => s.value > 0);
 
-  const priorityData = trends?.priorityDistribution?.map(p => ({
-    name: p._id,
-    value: p.count,
-    fill: COLORS.priority[p._id] || '#6B7280'
-  })) || [];
+  const priorityData = [{ name: 'High', value: overview.highPriorityTasks, fill: '#EF4444' },
+    { name: 'Low', value: Math.max(0, overview.totalTasks - overview.highPriorityTasks), fill: '#10B981' }].filter(s => s.value > 0);
 
-  const weeklyData = trends?.weeklyTrends?.map(w => {
-    const item = { date: w._id };
-    w.statuses?.forEach(s => { item[s.status] = s.count; });
-    return item;
-  }) || [];
+  const weeklyData = [];
+  const monthlyData = [];
 
-  const monthlyData = trends?.monthlyTrends?.map(m => {
-    const item = { month: m._id };
-    m.statuses?.forEach(s => { item[s.status] = s.count; });
-    return item;
-  }) || [];
+  const overviewPie = [
+    { name: 'Completed', value: overview.completedTasks, fill: '#10B981' },
+    { name: 'Pending', value: overview.pendingTasks, fill: '#F59E0B' },
+    { name: 'In Progress', value: overview.inProgressTasks, fill: '#3B82F6' },
+  ];
 
   const StatCard = ({ title, value, icon, color }) => (
     <div className="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm dark:shadow-gray-900/50 border-l-4" style={{ borderColor: color }}>
@@ -88,7 +114,29 @@ export default function Analytics({ showToast }) {
         <StatCard title="Completion" value={`${overview.completionRate}%`} icon="📈" color="#10B981" />
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="bg-white dark:bg-gray-800 p-5 rounded-xl shadow-sm dark:shadow-gray-900/50 md:col-span-3">
+          <h3 className="text-lg font-semibold mb-4 dark:text-gray-100">Task Overview</h3>
+          {overviewPie.some(d => d.value > 0) ? (
+            <ResponsiveContainer width="100%" height={400}>
+              <PieChart>
+                <Pie
+                  data={overviewPie}
+                  cx="50%" cy="50%" innerRadius={80} outerRadius={140}
+                  dataKey="value"
+                  activeIndex={activeIndex}
+                  activeShape={renderActiveShape}
+                  onMouseEnter={onPieEnter}
+                  onMouseLeave={onPieLeave}
+                >
+                  {overviewPie.map((entry, i) => <Cell key={i} fill={entry.fill} />)}
+                </Pie>
+                <Legend />
+              </PieChart>
+            </ResponsiveContainer>
+          ) : <p className="text-gray-400 text-sm">No data</p>}
+        </div>
+
         <div className="bg-white dark:bg-gray-800 p-5 rounded-xl shadow-sm dark:shadow-gray-900/50">
           <h3 className="text-lg font-semibold mb-4 dark:text-gray-100">Status Distribution</h3>
           {statusData.length > 0 ? (

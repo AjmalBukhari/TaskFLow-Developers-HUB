@@ -1,6 +1,5 @@
 require('dotenv').config();
 const express = require('express');
-const mongoose = require('mongoose');
 const cors = require('cors');
 const http = require('http');
 const { init: initSocket } = require('./services/socket');
@@ -39,11 +38,6 @@ io.on('connection', (socket) => {
 
 app.use(errorHandler);
 
-mongoose.connect(process.env.MONGO_URI)
-  .then(() => {
-    console.log('MongoDB Connected');
-    server.listen(PORT, () => console.log(`Server running on port ${PORT}`));
-  })
-  .catch(err => console.error('Database connection error:', err));
+server.listen(PORT, () => console.log(`Server running on port ${PORT}`));
 
 module.exports = { app, io };

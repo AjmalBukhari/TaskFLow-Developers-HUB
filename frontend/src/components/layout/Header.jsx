@@ -6,7 +6,7 @@ import { useTheme } from "../../context/ThemeContext";
 export default function Header({ onSearch, onLogout, onNavigate }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [notificationOpen, setNotificationOpen] = useState(false);
-  const { notifications, unreadCount, markAllAsRead } = useNotifications();
+  const { notifications, unreadCount, markAllNotificationsAsRead } = useNotifications();
   const { dark, toggle } = useTheme();
 
   const handleLogout = () => {
@@ -37,29 +37,39 @@ export default function Header({ onSearch, onLogout, onNavigate }) {
           <AnimatePresence>
             {notificationOpen && (
               <motion.div
+                key="notification-dropdown"
                 initial={{ opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -10 }}
                 transition={{ duration: 0.2 }}
                 className="absolute right-0 mt-2 w-72 bg-white dark:bg-gray-800 shadow-lg dark:shadow-gray-900/50 rounded-lg overflow-hidden border dark:border-gray-700 max-h-96 overflow-y-auto"
               >
-                <div className="px-4 py-2 text-sm font-semibold border-b dark:border-gray-700 flex justify-between items-center dark:text-gray-100">
+                <div key="notif-header" className="px-4 py-2 text-sm font-semibold border-b dark:border-gray-700 flex justify-between items-center dark:text-gray-100">
                   <span>Notifications</span>
                   {unreadCount > 0 && (
-                    <button onClick={markAllAsRead} className="text-xs text-indigo-600 dark:text-indigo-400 hover:underline">Mark all read</button>
+                    <button onClick={markAllNotificationsAsRead} className="text-xs text-indigo-600 dark:text-indigo-400 hover:underline">Mark all read</button>
                   )}
                 </div>
                 {notifications.length === 0 ? (
-                  <div className="px-4 py-3 text-sm text-gray-500 dark:text-gray-400">No notifications</div>
+                  <div key="notif-empty" className="px-4 py-3 text-sm text-gray-500 dark:text-gray-400">No notifications</div>
                 ) : (
                   notifications.slice(0, 5).map(notification => (
-                    <div key={notification._id} className={`px-4 py-2 border-b last:border-0 ${!notification.read ? 'bg-indigo-50 dark:bg-indigo-900/30' : ''}`}>
+                    <div key={notification.id} className={`px-4 py-2 border-b dark:border-gray-700 ${!notification.read ? 'bg-indigo-50 dark:bg-indigo-900/30' : ''}`}>
                       <p className="text-sm dark:text-gray-200">{notification.message}</p>
                       <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                         {new Date(notification.createdAt).toLocaleTimeString()}
                       </p>
                     </div>
                   ))
+                )}
+                {notifications.length > 0 && (
+                  <div
+                    key="notif-view-all"
+                    onClick={() => { setNotificationOpen(false); onNavigate && onNavigate('Notifications'); }}
+                    className="px-4 py-2.5 text-sm text-indigo-600 dark:text-indigo-400 font-medium text-center border-t dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer transition"
+                  >
+                    View All Notifications →
+                  </div>
                 )}
               </motion.div>
             )}
@@ -82,6 +92,7 @@ export default function Header({ onSearch, onLogout, onNavigate }) {
           <AnimatePresence>
             {menuOpen && (
               <motion.div
+                key="user-menu-dropdown"
                 initial={{ opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -10 }}

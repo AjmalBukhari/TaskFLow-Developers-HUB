@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import socketService, { useSocket } from '../services/socketService';
-import { getNotifications, markAsRead, markAllAsRead, getUnreadCount } from '../services/api';
+import { getNotifications, markAsRead, markAllAsRead, getUnreadCount, deleteNotification as deleteNotificationApi, clearAllNotifications as clearAllApi } from '../services/api';
 
 const NotificationContext = createContext();
 
@@ -48,9 +48,9 @@ export const NotificationProvider = ({ children }) => {
   const markNotificationAsRead = async (id) => {
     try {
       const { data } = await markAsRead(id);
-      setNotifications(prev => 
-        prev.map(n => n._id === id ? { ...n, read: true } : n)
-      );
+setNotifications(prev => 
+         prev.map(n => n.id === id ? { ...n, read: true } : n)
+       );
       setUnreadCount(prev => prev - 1);
       return data;
     } catch (error) {
@@ -74,11 +74,27 @@ export const NotificationProvider = ({ children }) => {
   // Delete notification
   const deleteNotification = async (id) => {
     try {
-      await fetch(`/api/notifications/${id}`, { method: 'DELETE' });
-      setNotifications(prev => prev.filter(n => n._id !== id));
-      setUnreadCount(prev => prev - 1);
+      const res = await deleteNotificationApi(id);
+      if (res.status === 'success' || res.status === 200) {
+        setNotifications(prev => prev.filter(n => n.id !== id));
+        setUnreadCount(prev => Math.max(0, prev - 1));
+      }
     } catch (error) {
       console.error('Error deleting notification:', error);
+      throw error;
+    }
+  };
+
+  // Clear all notifications
+  const clearAllNotifications = async () => {
+    try {
+      const res = await clearAllApi();
+      if (res.status === 'success' || res.status === 200) {
+        setNotifications([]);
+        setUnreadCount(0);
+      }
+    } catch (error) {
+      console.error('Error clearing notifications:', error);
       throw error;
     }
   };
@@ -88,15 +104,15 @@ export const NotificationProvider = ({ children }) => {
     setUnreadCount(prev => prev + 1);
   });
 
-  useSocket('task_updated', (task) => {
-    setNotifications(prev => 
-      prev.map(n => 
-        n.taskId?._id === task._id 
-          ? { ...n, message: `Task "${task.title}" status was updated to ${task.status}` }
-          : n
-      )
-    );
-  });
+useSocket('task_updated', (task) => {
+     setNotifications(prev => 
+       prev.map(n => 
+         n.taskId?.id === task.id 
+           ? { ...n, message: `Task "${task.title}" status was updated to ${task.status}` }
+           : n
+       )
+     );
+   });
 
   useEffect(() => {
     socketService.connect();
@@ -118,7 +134,8 @@ export const NotificationProvider = ({ children }) => {
     fetchUnreadCount,
     markNotificationAsRead,
     markAllNotificationsAsRead,
-    deleteNotification
+    deleteNotification,
+    clearAllNotifications
   };
 
   return (

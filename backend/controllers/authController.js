@@ -1,8 +1,7 @@
-const User = require('../models/User');
-const Task = require('../models/Task');
-const Notification = require('../models/Notification');
+const supabase = require('../config/supabase');
 const AppError = require('../utils/appError');
 const jwt = require('jsonwebtoken');
+const bcrypt = require('bcryptjs');
 
 const generateToken = (userId) => {
   return jwt.sign({ id: userId }, process.env.JWT_SECRET, {
@@ -13,12 +12,15 @@ const generateToken = (userId) => {
 exports.register = async (req, res, next) => {
   try {
     const { fullname, email, password } = req.body;
-    const existingUser = await User.findOne({ email });
-    if (existingUser) return next(AppError('User already exists with this email', 400));
-    const user = await User.create({ fullname, email, password });
-    const token = generateToken(user._id);
-    user.password = undefined;
-    res.status(201).json({ status: 'success', token, data: { user } });
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const { data, error } = await supabase
+      .from('users')
+      .insert({ fullname, email, password: hashedPassword })
+      .select()
+      .single();
+    if (error) return next(AppError(error.message, 400));
+    const token = generateToken(data.id);
+    res.status(201).json({ status: 'success', token, data: { user: data } });
   } catch (err) {
     next(err);
   }
@@ -27,12 +29,15 @@ exports.register = async (req, res, next) => {
 exports.login = async (req, res, next) => {
   try {
     const { email, password } = req.body;
-    const user = await User.findOne({ email }).select('+password');
-    if (!user) return next(AppError('Invalid credentials', 401));
-    const isPasswordCorrect = await user.comparePassword(password);
+    const { data: user, error } = await supabase
+      .from('users')
+      .select('*')
+      .eq('email', email)
+      .single();
+    if (error || !user) return next(AppError('Invalid credentials', 401));
+    const isPasswordCorrect = await bcrypt.compare(password, user.password);
     if (!isPasswordCorrect) return next(AppError('Invalid credentials', 401));
-    const token = generateToken(user._id);
-    user.password = undefined;
+    const token = generateToken(user.id);
     res.json({ status: 'success', token, data: { user } });
   } catch (err) {
     next(err);
@@ -41,7 +46,12 @@ exports.login = async (req, res, next) => {
 
 exports.getCurrentUser = async (req, res, next) => {
   try {
-    const user = await User.findById(req.user.id);
+    const { data: user, error } = await supabase
+      .from('users')
+      .select('*')
+      .eq('id', req.user.id)
+      .single();
+    if (error) return next(AppError('User not found', 404));
     res.json({ status: 'success', data: { user } });
   } catch (err) {
     next(err);
@@ -50,17 +60,19 @@ exports.getCurrentUser = async (req, res, next) => {
 
 exports.updateUser = async (req, res, next) => {
   try {
-    const { fullname, email } = req.body;
-    if (email) {
-      const existingUser = await User.findOne({ email, _id: { $ne: req.user.id } });
-      if (existingUser) return next(AppError('Email already exists', 400));
+    const { fullname, email, password } = req.body;
+    let updateData = { fullname, email };
+    if (password) {
+      updateData.password = await bcrypt.hash(password, 10);
     }
-    const user = await User.findByIdAndUpdate(
-      req.user.id,
-      { fullname, email },
-      { new: true, runValidators: true }
-    );
-    res.json({ status: 'success', data: { user } });
+    const { data, error } = await supabase
+      .from('users')
+      .update(updateData)
+      .eq('id', req.user.id)
+      .select()
+      .single();
+    if (error) return next(AppError(error.message, 400));
+    res.json({ status: 'success', data: { user: data } });
   } catch (err) {
     next(err);
   }
@@ -69,12 +81,20 @@ exports.updateUser = async (req, res, next) => {
 exports.updatePassword = async (req, res, next) => {
   try {
     const { currentPassword, newPassword } = req.body;
-    const user = await User.findById(req.user.id).select('+password');
-    if (!user) return next(AppError('User not found', 404));
-    const isCurrentPasswordCorrect = await user.comparePassword(currentPassword);
+    const { data: user, error } = await supabase
+      .from('users')
+      .select('*')
+      .eq('id', req.user.id)
+      .single();
+    if (error || !user) return next(AppError('User not found', 404));
+    const isCurrentPasswordCorrect = await bcrypt.compare(currentPassword, user.password);
     if (!isCurrentPasswordCorrect) return next(AppError('Current password is incorrect', 401));
-    user.password = newPassword;
-    await user.save();
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    const { error: updateError } = await supabase
+      .from('users')
+      .update({ password: hashedPassword })
+      .eq('id', req.user.id);
+    if (updateError) return next(AppError(updateError.message, 400));
     res.json({ status: 'success', message: 'Password updated successfully' });
   } catch (err) {
     next(err);
@@ -84,10 +104,18 @@ exports.updatePassword = async (req, res, next) => {
 exports.forgotPassword = async (req, res, next) => {
   try {
     const { email, newPassword } = req.body;
-    const user = await User.findOne({ email });
-    if (!user) return next(AppError('User not found', 404));
-    user.password = newPassword;
-    await user.save();
+    const { data: user, error } = await supabase
+      .from('users')
+      .select('*')
+      .eq('email', email)
+      .single();
+    if (error || !user) return next(AppError('User not found', 404));
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    const { error: updateError } = await supabase
+      .from('users')
+      .update({ password: hashedPassword })
+      .eq('id', user.id);
+    if (updateError) return next(AppError(updateError.message, 400));
     res.json({ status: 'success', message: 'Password updated successfully' });
   } catch (err) {
     next(err);
@@ -96,14 +124,18 @@ exports.forgotPassword = async (req, res, next) => {
 
 exports.deleteUser = async (req, res, next) => {
   try {
-    const user = await User.findById(req.user.id).select('+password');
-    if (!user) return next(AppError('User not found', 404));
     const { password } = req.body;
-    const isPasswordCorrect = await user.comparePassword(password);
+    const { data: user, error } = await supabase
+      .from('users')
+      .select('*')
+      .eq('id', req.user.id)
+      .single();
+    if (error || !user) return next(AppError('User not found', 404));
+    const isPasswordCorrect = await bcrypt.compare(password, user.password);
     if (!isPasswordCorrect) return next(AppError('Password is incorrect', 400));
-    await Task.deleteMany({ user: req.user.id });
-    await Notification.deleteMany({ recipient: req.user.id });
-    await User.findByIdAndDelete(req.user.id);
+    await supabase.from('tasks').delete().eq('user_id', req.user.id);
+    await supabase.from('notifications').delete().eq('recipient', req.user.id);
+    await supabase.from('users').delete().eq('id', req.user.id);
     res.json({ status: 'success', message: 'User deleted successfully' });
   } catch (err) {
     next(err);

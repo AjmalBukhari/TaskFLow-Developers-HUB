@@ -60,16 +60,16 @@ export default function BinTask({ showToast }) {
         ) : (
           <div className="space-y-3">
             {tasks.map(task => (
-              <motion.div key={task._id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
+              <motion.div key={task.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
                 className="flex justify-between items-center border dark:border-gray-700 p-3 rounded-lg">
                 <div>
                   <h4 className="font-medium line-through text-gray-500 dark:text-gray-400">{task.title}</h4>
                   <p className="text-xs text-gray-400 dark:text-gray-500">{task.description}</p>
                 </div>
                 <div className="flex gap-2">
-                  <button onClick={() => handleRestore(task._id)}
+                  <button onClick={() => handleRestore(task.id)}
                     className="px-3 py-1 text-sm bg-green-100 dark:bg-green-900/50 text-green-700 dark:text-green-400 rounded hover:bg-green-200 dark:hover:bg-green-800/50">Restore</button>
-                  <button onClick={() => handleDelete(task._id)}
+                  <button onClick={() => handleDelete(task.id)}
                     className="px-3 py-1 text-sm bg-red-100 dark:bg-red-900/50 text-red-700 dark:text-red-400 rounded hover:bg-red-200 dark:hover:bg-red-800/50">Delete</button>
                 </div>
               </motion.div>

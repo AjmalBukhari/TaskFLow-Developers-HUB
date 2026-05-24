@@ -1,14 +1,18 @@
 const jwt = require('jsonwebtoken');
 const AppError = require('../utils/appError');
-const User = require('../models/User');
+const supabase = require('../config/supabase');
 
 module.exports = async (req, res, next) => {
   try {
     const token = req.header('Authorization')?.replace('Bearer ', '');
     if (!token) return next(AppError('Not authorized, no token provided', 401));
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const user = await User.findById(decoded.id);
-    if (!user) return next(AppError('Not authorized, user not found', 401));
+    const { data: user, error } = await supabase
+      .from('users')
+      .select('*')
+      .eq('id', decoded.id)
+      .single();
+    if (error || !user) return next(AppError('Not authorized, user not found', 401));
     req.user = user;
     next();
   } catch (err) {

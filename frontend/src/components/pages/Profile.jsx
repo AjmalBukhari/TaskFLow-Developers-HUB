@@ -27,7 +27,7 @@ export default function Profile({ showToast }) {
       <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm dark:shadow-gray-900/50 border dark:border-gray-700 space-y-5">
         <div>
           <p className="text-sm text-gray-500 dark:text-gray-400">User ID</p>
-          <p className="font-mono text-sm dark:text-gray-300">{user._id}</p>
+          <p className="font-mono text-sm dark:text-gray-300">{user.id || user._id}</p>
         </div>
         <div>
           <p className="text-sm text-gray-500 dark:text-gray-400">Email</p>
